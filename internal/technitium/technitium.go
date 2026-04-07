@@ -41,7 +41,7 @@ type Provider struct {
 // StartupConfig clarifies the method signature
 type StartupConfig struct {
 	Host       string `env:"TECHNITIUM_HOST,required" envDefault:"localhost"`
-	Port       int    `env:"TECHNITIUM_PORT,required" envDefault:"53443"`
+	Port       int    `env:"TECHNITIUM_PORT,required" envDefault:"5380"`
 	Username   string `env:"TECHNITIUM_USER"`
 	Password   string `env:"TECHNITIUM_PASSWORD"`
 	Token      string `env:"TECHNITIUM_TOKEN"`
