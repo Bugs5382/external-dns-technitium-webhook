@@ -23,9 +23,32 @@ This project is designed to run exclusively as a **sidecar container** within th
 
 ## ⚙️ Configuration
 
+Setting up Technitium doesn’t have to be a chore. I’ve polished your instructions to make them more professional, readable, and authoritative while keeping that helpful peer-to-peer vibe.
+
+Follow these streamlined steps to configure your users and zones correctly.
+
+### Phase 1: User Configuration
+Before managing records, you need a user with the appropriate permissions.
+
+1.  **Navigate:** Go to the **Administration** tab and select the **Users** sub-tab.
+2.  **Create User:** Click to add a new user.
+    > **Note:** Ensure the **Username** and **Password** contain **no spaces**. The *Display Name* is purely cosmetic and can be formatted however you like.
+3.  **Assign Permissions:** Add the new user to the **DNS Administrators** group.
+4.  **Session Management:** You may set the *Session Timeout* to `0` for an indefinite session. However, the application is designed to automatically re-authenticate and refresh the API key before the timeout expires.
+
+### Phase 2: Zone Management
+The API requires an existing zone to function. Please ensure your target zone is created manually before proceeding.
+
+1.  **Navigate:** Open the **Zones** tab in the top navigation bar.
+2.  **Initialize:** Click the **Add Zone** button.
+3.  **Select Type:** Choose your required zone type.
+    * **Primary Zone:** The standard choice for most setups.
+    * **Other:** Consult your DNS Engineer if your infrastructure requires a Secondary or Forwarding zone.
+4.  **Finalize:** Click **Add** to save the configuration.
+
 ## 🏗 Development
 
-## 🛠 Build
+### 🛠 Build
 
 To compile the project locally, execute:
 
@@ -57,7 +80,7 @@ To verify only the project licenses, use:
 make license
 ```
 
-## 🧪 Test
+### 🧪 Test
 
 To execute the unit testing suite, run:
 
