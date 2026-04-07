@@ -28,6 +28,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -105,10 +107,14 @@ func (c *Client) loginLocked() error {
 		return fmt.Errorf("login disabled: client is configured with a static API token")
 	}
 
-	endpoint := fmt.Sprintf("%s/api/user/login", c.BaseURL)
+	metrics.TotalApiCalls.Inc()
+	timer := prometheus.NewTimer(metrics.ApiCallLatency.WithLabelValues("login"))
+	defer timer.ObserveDuration()
 
+	endpoint := fmt.Sprintf("%s/api/user/login", c.BaseURL)
 	req, err := http.NewRequest(http.MethodPost, endpoint, nil)
 	if err != nil {
+		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("failed to create login request: %w", err)
 	}
 
@@ -120,34 +126,41 @@ func (c *Client) loginLocked() error {
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
+		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("login request failed: %w", err)
 	}
 	defer func() {
 		closeErr := resp.Body.Close()
 		if closeErr != nil {
+			metrics.FailedApiCallsTotal.Inc()
 			log.Errorf("Failed to close response body: %v", closeErr)
 		}
 	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("failed to read login response: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("unexpected HTTP status %d: %s", resp.StatusCode, string(body))
 	}
 
 	var apiResp APIResponse
 	if err := json.Unmarshal(body, &apiResp); err != nil {
+		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("failed to parse login JSON: %w", err)
 	}
 
 	if apiResp.Status != "ok" {
+		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("login failed: %s", apiResp.ErrorMessage)
 	}
 
 	if apiResp.Token == "" {
+		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("login succeeded but no token was returned by the server")
 	}
 
@@ -161,6 +174,10 @@ func (c *Client) loginLocked() error {
 // DoRequest is the central method for interacting with the API.
 // It automatically handles injecting the token, tracking session lengths, and re-authenticating (if applicable).
 func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, error) {
+	metrics.TotalApiCalls.Inc()
+	timer := prometheus.NewTimer(metrics.ApiCallLatency.WithLabelValues(path))
+	defer timer.ObserveDuration()
+
 	c.mu.Lock()
 
 	// 1. Check if token is missing or expired (only if we are managing sessions)
@@ -185,6 +202,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	endpoint := fmt.Sprintf("%s%s", c.BaseURL, path)
 	req, err := http.NewRequest(method, endpoint, nil)
 	if err != nil {
+		metrics.FailedApiCallsTotal.Inc()
 		return nil, fmt.Errorf("failed to create API request: %w", err)
 	}
 
@@ -193,17 +211,20 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	// 3. Execute the Request
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
+		metrics.FailedApiCallsTotal.Inc()
 		return nil, fmt.Errorf("API request failed: %w", err)
 	}
 	defer func() {
 		closeErr := resp.Body.Close()
 		if closeErr != nil {
+			metrics.FailedApiCallsTotal.Inc()
 			log.Errorf("Failed to close response body: %v", closeErr)
 		}
 	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		metrics.FailedApiCallsTotal.Inc()
 		return nil, fmt.Errorf("failed to read API response body: %w", err)
 	}
 
@@ -218,6 +239,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 		}
 
 	case http.StatusUnauthorized, http.StatusForbidden:
+		metrics.FailedApiCallsTotal.Inc()
 		// If the server rejects the token and it's a managed session, wipe it.
 		// The next call will force a fresh login. If it's static, leave it alone but return the error.
 		if !c.isStaticToken {
@@ -229,6 +251,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 		return nil, fmt.Errorf("authentication rejected (status %d): %s", resp.StatusCode, string(body))
 
 	default:
+		metrics.FailedApiCallsTotal.Inc()
 		// It's good practice to handle other non-200 codes (404, 500, etc.) here
 		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}
