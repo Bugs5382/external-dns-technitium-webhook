@@ -33,4 +33,4 @@ A special thanks to the [external-dns-infoblox-webhook](https://github.com/AbsaO
 
 ## 📄 License
 
-This project is licensed under the **Apache License 2.0**. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
