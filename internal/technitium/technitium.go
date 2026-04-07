@@ -59,6 +59,7 @@ type StartupConfig struct {
 func NewTechnitiumProviderWithToken(config *StartupConfig, domainFilter *endpoint.DomainFilter) (*Provider, error) {
 	client := NewClientWithToken(
 		config.Host,
+		config.Port,
 		config.Token,
 		config.SSLVerify,
 	)
@@ -69,6 +70,7 @@ func NewTechnitiumProviderWithToken(config *StartupConfig, domainFilter *endpoin
 func NewTechnitiumProviderWithCredentials(config *StartupConfig, domainFilter *endpoint.DomainFilter) (*Provider, error) {
 	client := NewClientWithCredentials(
 		config.Host,
+		config.Port,
 		config.Username,
 		config.Password,
 		config.SSLVerify,

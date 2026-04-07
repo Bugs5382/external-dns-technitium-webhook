@@ -25,6 +25,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -48,6 +49,7 @@ type APIResponse struct {
 // Client represents the Technitium DNS API client.
 type Client struct {
 	BaseURL    string
+	Port       string
 	Username   string // Optional if using a static token
 	Password   string // Optional if using a static token
 	HTTPClient *http.Client
@@ -60,9 +62,10 @@ type Client struct {
 }
 
 // NewClientWithCredentials initializes a Technitium API client with credentials and SSL settings.
-func NewClientWithCredentials(baseURL, username, password string, sslVerify bool) *Client {
+func NewClientWithCredentials(baseURL string, port int, username, password string, sslVerify bool) *Client {
 	return &Client{
 		BaseURL:    baseURL,
+		Port:       strconv.Itoa(port),
 		Username:   username,
 		Password:   password,
 		HTTPClient: createHTTPClient(sslVerify),
@@ -70,9 +73,10 @@ func NewClientWithCredentials(baseURL, username, password string, sslVerify bool
 }
 
 // NewClientWithToken initializes a Technitium API client with a static token and SSL settings.
-func NewClientWithToken(baseURL, token string, sslVerify bool) *Client {
+func NewClientWithToken(baseURL string, port int, token string, sslVerify bool) *Client {
 	return &Client{
 		BaseURL:       baseURL,
+		Port:          strconv.Itoa(port),
 		token:         token,
 		isStaticToken: true,
 		HTTPClient:    createHTTPClient(sslVerify),
@@ -199,7 +203,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	// Inject the authentication token (Technitium requires this via query string)
 	params.Set("token", currentToken)
 
-	endpoint := fmt.Sprintf("%s%s", c.BaseURL, path)
+	endpoint := fmt.Sprintf("%s%s%s", c.BaseURL, c.Port, path)
 	req, err := http.NewRequest(method, endpoint, nil)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
