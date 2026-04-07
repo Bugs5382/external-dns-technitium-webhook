@@ -11,11 +11,11 @@ This project is designed to run exclusively as a **sidecar container** within th
 | Environment Variable  | Default value | Required |
 |-----------------------|---------------|----------|
 | TECHNITIUM_HOST       | localhost     | true     |
-| TECHNITIUM_PORT       | 53443         | true     |
+| TECHNITIUM_PORT       | 5380          | true     |
 | TECHNITIUM_USER       |               | false    |
 | TECHNITIUM_PASSWORD   |               | false    |
 | TECHNITIUM_TOKEN      |               | false    |
-| TECHNITIUM_SESSION_TTL |               | false    |
+| TECHNITIUM_SESSION_TTL|               | false    |
 | TECHNITIUM_SSL_VERIFY | false         | false    |
 | TECHNITIUM_DRY_RUN    | false         | false    |
 | TECHNITIUM_CREATE_PTR | false         | false    |
