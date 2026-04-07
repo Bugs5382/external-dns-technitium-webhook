@@ -6,7 +6,18 @@ A specialized webhook provider for [ExternalDNS](https://github.com/kubernetes-s
 
 This project is designed to run exclusively as a **sidecar container** within the `external-dns` pod. It implements the ExternalDNS Webhook provider API to bridge Kubernetes resource discovery with Technitium's management API.
 
-## 🚀 Deployment
+## 🚀 Quick Start
+
+| Environment Variable   | Default value | Required |
+|------------------------|---------------|----------|
+| TECHNITIUM_HOST        | localhost     | true     |
+| TECHNITIUM_PORT        | 53443         | true     |
+| TECHNITIUM_APIKEY      |               | true     |
+| TECHNITIUM_SSL_VERIFY  | true          | false    |
+| TECHNITIUM_DRY_RUN     | false         | false    |
+| TECHNITIUM_CREATE_PTR  | false         | false    |
+| TECHNITIUM_DEFAULT_TTL | 300           | false    |
+| TECHNITIUM_USE_TTL     | true          | false    |
 
 ## 📄 Supported Records
 
@@ -14,9 +25,53 @@ This project is designed to run exclusively as a **sidecar container** within th
 
 ## 🏗 Development
 
-### Build
+## 🛠 Build
 
-### Test
+To compile the project locally, execute:
+
+```bash
+make build
+```
+
+To remove build artifacts and clean your workspace:
+
+```bash
+make clean
+```
+
+If you are **contributing** to this project, you must first initialize the linting environment:
+ ```bash
+ make lint-init
+ ```
+ This command installs all necessary dependencies and tools for code analysis.
+
+Once initialized, you can analyze the codebase by running:
+
+```bash
+make lint
+```
+
+To verify only the project licenses, use:
+
+```bash
+make license
+```
+
+## 🧪 Test
+
+To execute the unit testing suite, run:
+
+```bash
+make test
+```
+
+## 🚀 Contribution
+
+We welcome all Pull Requests! To ensure a smooth review process, please adhere to the following requirements:
+
+* **✅ Validation:** Ensure your changes pass all checks. Running `make lint` will automatically verify code quality and inject the required license headers into required source files.
+* **🧪 Testing:** All new functionality **must** include corresponding unit tests. A successful test pass is required for any merge to the `main` branch.
+* **✍️ Security:** The final commit of your PR must be **signed** (e.g., GPG/SSH) before it can be merged for release.
 
 ## 🤝 Acknowledgments
 
