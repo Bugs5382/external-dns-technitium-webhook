@@ -1,0 +1,32 @@
+version = '2'
+
+[linters]
+enable = [
+    'goconst',
+    'gocyclo',
+    'misspell',
+    'unconvert',
+    'unparam'
+]
+
+[linters.exclusions]
+generated = 'lax'
+paths = [
+    'third_party$',
+    'builtin$',
+    'examples$'
+]
+
+[formatters]
+enable = [
+    'gofmt',
+    'goimports'
+]
+
+[formatters.exclusions]
+generated = 'lax'
+paths = [
+    'third_party$',
+    'builtin$',
+    'examples$'
+]
