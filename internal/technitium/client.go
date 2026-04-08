@@ -34,10 +34,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// DefaultSessionTimeout is the Technitium default timeout (30 mins).
-// We use 25 minutes as a safe buffer to proactively re-authenticate.
-const sessionBuffer = 25 * time.Minute
-
 // APIResponse represents the standard JSON envelope Technitium uses.
 type APIResponse struct {
 	Status       string          `json:"status"`
@@ -170,7 +166,7 @@ func (c *Client) loginLocked() error {
 
 	// Save token and set expiration based on current time + safe buffer
 	c.token = apiResp.Token
-	c.tokenExpiry = time.Now().Add(sessionBuffer)
+	c.tokenExpiry = time.Now().Add(sessionBuffer())
 
 	return nil
 }
@@ -238,14 +234,14 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 		// A successful call resets the Technitium rolling session timer (if applicable)
 		if !c.isStaticToken {
 			c.mu.Lock()
-			c.tokenExpiry = time.Now().Add(sessionBuffer)
+			c.tokenExpiry = time.Now().Add(sessionBuffer())
 			c.mu.Unlock()
 		}
 
 	case http.StatusUnauthorized, http.StatusForbidden:
 		metrics.FailedApiCallsTotal.Inc()
 		metrics.ApiCallLatency.WithLabelValues(path).Observe(duration.Seconds())
-		// If the server rejects the token and it's a managed session, wipe it.
+		// If the server rejects the token, and it's a managed session, wipe it.
 		// The next call will force a fresh login. If it's static, leave it alone but return the error.
 		if !c.isStaticToken {
 			c.mu.Lock()
