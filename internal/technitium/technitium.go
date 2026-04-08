@@ -131,6 +131,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			}
 		}
 	}
+	log.Debugf("fetched %d records from technitium", len(endpoints))
 	return endpoints, nil
 }
 

@@ -115,7 +115,7 @@ func (c *Client) loginLocked() error {
 	timer := prometheus.NewTimer(metrics.ApiCallLatency.WithLabelValues("login"))
 	defer timer.ObserveDuration()
 
-	endpoint := fmt.Sprintf("%s/api/user/login", c.BaseURL)
+	endpoint := fmt.Sprintf("%s:%s%s", c.BaseURL, c.Port, "/api/user/login")
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
@@ -201,7 +201,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 
 	params.Set("token", currentToken)
 
-	endpoint := fmt.Sprintf("%s%s%s", c.BaseURL, c.Port, path)
+	endpoint := fmt.Sprintf("%s:%s%s", c.BaseURL, c.Port, path)
 	req, err := http.NewRequest(method, endpoint, nil)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
