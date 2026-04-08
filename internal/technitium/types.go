@@ -23,27 +23,29 @@ type Zone struct {
 }
 
 type ZoneRecord struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-	TTL  int    `json:"ttl"`
-	Data struct {
-		Address string `json:"address,omitempty"` // A, AAAA
-		CNAME   string `json:"cname,omitempty"`   // CNAME
-		Text    string `json:"text,omitempty"`    // TXT
-		Value   string `json:"value,omitempty"`   // Generic
-	} `json:"data"`
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	TTL   int    `json:"ttl"`
+	RData struct {
+		IPAddress  string `json:"ipAddress,omitempty"`  // Used by A, AAAA
+		CNAME      string `json:"cname,omitempty"`      // Used by CNAME
+		Text       string `json:"text,omitempty"`       // Used by TXT
+		NameServer string `json:"nameServer,omitempty"` // Used by NS
+	} `json:"rData"`
 }
 
-// GetDataValue Helper to extract string value from Technitium's polymorphic data object
+// GetDataValue is a helper to pull the relevant string regardless of record type
 func (r ZoneRecord) GetDataValue() string {
-	if r.Data.Address != "" {
-		return r.Data.Address
+	switch r.Type {
+	case "A", "AAAA":
+		return r.RData.IPAddress
+	case "CNAME":
+		return r.RData.CNAME
+	case "TXT":
+		return r.RData.Text
+	case "NS":
+		return r.RData.NameServer
+	default:
+		return ""
 	}
-	if r.Data.CNAME != "" {
-		return r.Data.CNAME
-	}
-	if r.Data.Text != "" {
-		return r.Data.Text
-	}
-	return r.Data.Value
 }
