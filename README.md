@@ -19,7 +19,6 @@ This project is designed to run exclusively as a **sidecar container** within th
 | TECHNITIUM_SSL_VERIFY      | false         | false    |
 | TECHNITIUM_DRY_RUN         | false         | false    |
 | TECHNITIUM_CREATE_PTR      | false         | false    |
-| TECHNITIUM_DELETE_PTR_ZONE | false         | false    |
 | TECHNITIUM_DEFAULT_TTL     | 300           | false    |
 | TECHNITIUM_USE_TTL         | true          | false    |
 
