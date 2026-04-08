@@ -208,6 +208,11 @@ func (p *Provider) updateRecord(action string, ep *endpoint.Endpoint) error {
 			}
 		}
 
+		if p.config != nil && p.config.DryRun {
+			log.Info("Dry run: skipping..")
+			continue
+		}
+
 		_, err := p.client.DoRequest(http.MethodGet, path, params)
 		if err != nil {
 			log.Errorf("Failed to %s record %s: %v", action, ep.DNSName, err)

@@ -178,8 +178,11 @@ func (c *Client) loginLocked() error {
 // DoRequest is the central method for interacting with the API.
 // It automatically handles injecting the token, tracking session lengths, and re-authenticating (if applicable).
 func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, error) {
-	metrics.TotalApiCalls.Inc()
+	var startTime time.Time
+	startTime = time.Now()
+
 	timer := prometheus.NewTimer(metrics.ApiCallLatency.WithLabelValues(path))
+	duration := time.Since(startTime)
 	defer timer.ObserveDuration()
 
 	c.mu.Lock()
@@ -231,6 +234,8 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 
 	switch resp.StatusCode {
 	case http.StatusOK:
+		metrics.TotalApiCalls.Inc()
+		metrics.ApiCallLatency.WithLabelValues(path).Observe(duration.Seconds())
 		// A successful call resets the Technitium rolling session timer (if applicable)
 		if !c.isStaticToken {
 			c.mu.Lock()
@@ -240,6 +245,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 
 	case http.StatusUnauthorized, http.StatusForbidden:
 		metrics.FailedApiCallsTotal.Inc()
+		metrics.ApiCallLatency.WithLabelValues(path).Observe(duration.Seconds())
 		// If the server rejects the token and it's a managed session, wipe it.
 		// The next call will force a fresh login. If it's static, leave it alone but return the error.
 		if !c.isStaticToken {
@@ -252,6 +258,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 
 	default:
 		metrics.FailedApiCallsTotal.Inc()
+		metrics.ApiCallLatency.WithLabelValues(path).Observe(duration.Seconds())
 		// It's good practice to handle other non-200 codes (404, 500, etc.) here
 		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}
