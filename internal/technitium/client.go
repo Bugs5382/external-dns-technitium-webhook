@@ -178,8 +178,7 @@ func (c *Client) loginLocked() error {
 // DoRequest is the central method for interacting with the API.
 // It automatically handles injecting the token, tracking session lengths, and re-authenticating (if applicable).
 func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, error) {
-	var startTime time.Time
-	startTime = time.Now()
+	startTime := time.Now()
 
 	timer := prometheus.NewTimer(metrics.ApiCallLatency.WithLabelValues(path))
 	duration := time.Since(startTime)
