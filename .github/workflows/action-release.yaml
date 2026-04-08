@@ -84,3 +84,15 @@ jobs:
           CI_COMMIT_SHA: ${{ github.sha }}
           CI_COMMIT_TAG: ${{ github.event.release.tag_name }}
           REPO_NAME: ${{ github.repository }}
+
+      - name: Update Changelog
+        uses: stefanzweifel/changelog-updater-action@v1
+        with:
+          latest-version: ${{ github.event.release.name }}
+          release-notes: ${{ github.event.release.body }}
+
+      - name: Commit and Push Version Update
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "chore(release): ${{ github.event.release.tag_name }} [skip ci]"
+
