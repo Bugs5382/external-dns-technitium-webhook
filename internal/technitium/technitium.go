@@ -63,7 +63,11 @@ func NewTechnitiumProviderWithToken(config *StartupConfig, domainFilter *endpoin
 		config.Token,
 		config.SSLVerify,
 	)
-	return &Provider{client: client, domainFilter: domainFilter}, nil
+	return &Provider{
+		client:       client,
+		domainFilter: domainFilter,
+		config:       config,
+	}, nil
 }
 
 // NewTechnitiumProviderWithCredentials creates a provider using managed sessions
@@ -75,7 +79,11 @@ func NewTechnitiumProviderWithCredentials(config *StartupConfig, domainFilter *e
 		config.Password,
 		config.SSLVerify,
 	)
-	return &Provider{client: client, domainFilter: domainFilter}, nil
+	return &Provider{
+		client:       client,
+		domainFilter: domainFilter,
+		config:       config,
+	}, nil
 }
 
 // Records returns the list of all DNS records from the provider.
@@ -137,30 +145,28 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 }
 
 // ApplyChanges applies the given set of changes (Create, Update, Delete) to the DNS provider.
-func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
-	// Combine all changes into a single execution flow
-	// Technitium doesn't have a bulk API, so we process sequentially
+func (p *Provider) ApplyChanges(_ context.Context, changes *plan.Changes) error {
 
 	for _, ep := range changes.Create {
-		if err := p.updateRecord(ctx, "add", ep); err != nil {
+		if err := p.updateRecord("add", ep); err != nil {
 			return err
 		}
 	}
 
 	for _, ep := range changes.UpdateOld {
-		if err := p.updateRecord(ctx, "delete", ep); err != nil {
+		if err := p.updateRecord("delete", ep); err != nil {
 			return err
 		}
 	}
 
 	for _, ep := range changes.UpdateNew {
-		if err := p.updateRecord(ctx, "add", ep); err != nil {
+		if err := p.updateRecord("add", ep); err != nil {
 			return err
 		}
 	}
 
 	for _, ep := range changes.Delete {
-		if err := p.updateRecord(ctx, "delete", ep); err != nil {
+		if err := p.updateRecord("delete", ep); err != nil {
 			return err
 		}
 	}
@@ -168,9 +174,8 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	return nil
 }
 
-func (p *Provider) updateRecord(ctx context.Context, action string, ep *endpoint.Endpoint) error {
-
-	log.Info(ctx)
+// updateRecord Updates the record to the DNS server.
+func (p *Provider) updateRecord(action string, ep *endpoint.Endpoint) error {
 
 	// Technitium API paths
 	path := "/api/zones/records/add"
@@ -183,31 +188,26 @@ func (p *Provider) updateRecord(ctx context.Context, action string, ep *endpoint
 		params.Set("domain", ep.DNSName)
 		params.Set("type", ep.RecordType)
 
-		// Map the target to the specific key Technitium expects based on type
-		// See: https://github.com/TechnitiumSoftware/DnsServer/blob/master/APIDOCS.md#add-record
 		switch ep.RecordType {
-		case "A", "AAAA":
+		case RecordTypeA, RecordTypeAAAA:
 			params.Set("ipAddress", target)
-		case "CNAME":
+		case RecordTypeCNAME:
 			params.Set("cname", target)
-		case "PTR":
-			params.Set("ptrName", target)
-		case "TXT":
+		case RecordTypeTXT:
 			params.Set("text", target)
-		case "MX":
-			// Note: External-DNS targets for MX usually include priority (e.g., "10 mail.example.com")
-			// You may need to split these if Technitium requires separate 'preference' and 'exchange' params
-			params.Set("exchange", target)
 		default:
 			params.Set("value", target)
 		}
 
 		if action == "add" {
 			params.Set("ttl", fmt.Sprintf("%d", ep.RecordTTL))
-			params.Set("overwrite", "true") // Ensures we update if it exists
+			params.Set("overwrite", "true")
+			if p.config != nil && p.config.CreatePTR && (ep.RecordType == "A" || ep.RecordType == "AAAA") {
+				params.Set("ptr", "true")
+				params.Set("createPtrZone", "true")
+			}
 		}
 
-		// Using "GET" as per Technitium API specs for these endpoints
 		_, err := p.client.DoRequest(http.MethodGet, path, params)
 		if err != nil {
 			log.Errorf("Failed to %s record %s: %v", action, ep.DNSName, err)
