@@ -8,23 +8,33 @@ This project is designed to run exclusively as a **sidecar container** within th
 
 ## 🚀 Quick Start
 
-| Environment Variable  | Default value | Required |
-|-----------------------|---------------|----------|
-| TECHNITIUM_HOST       | localhost     | true     |
-| TECHNITIUM_PORT       | 5380          | true     |
-| TECHNITIUM_USER       |               | false    |
-| TECHNITIUM_PASSWORD   |               | false    |
-| TECHNITIUM_TOKEN      |               | false    |
-| TECHNITIUM_SESSION_TTL|               | false    |
-| TECHNITIUM_SSL_VERIFY | false         | false    |
-| TECHNITIUM_DRY_RUN    | false         | false    |
-| TECHNITIUM_CREATE_PTR | false         | false    |
-| TECHNITIUM_DEFAULT_TTL | 300           | false    |
-| TECHNITIUM_USE_TTL    | true          | false    |
+| Environment Variable       | Default value | Required |
+|----------------------------|---------------|----------|
+| TECHNITIUM_HOST            | localhost     | true     |
+| TECHNITIUM_PORT            | 5380          | true     |
+| TECHNITIUM_USER            |               | false    |
+| TECHNITIUM_PASSWORD        |               | false    |
+| TECHNITIUM_TOKEN           |               | false    |
+| TECHNITIUM_SESSION_TTL     |               | false    |
+| TECHNITIUM_SSL_VERIFY      | false         | false    |
+| TECHNITIUM_DRY_RUN         | false         | false    |
+| TECHNITIUM_CREATE_PTR      | false         | false    |
+| TECHNITIUM_DELETE_PTR_ZONE | false         | false    |
+| TECHNITIUM_DEFAULT_TTL     | 300           | false    |
+| TECHNITIUM_USE_TTL         | true          | false    |
 
 > Note: You have to either provide ``TECHNITIUM_USER`` and ``TECHNITIUM_PASSWORD`` or just  ``TECHNITIUM_TOKEN``
 
 ## 📄 Supported Records
+
+| Record Type  | Status    |
+|--------------|-----------|
+| A     (IPv4) | Supported |
+| AAAA  (IPv6) | Supported |
+| CNAME        | Supported |
+| TXT          | Supported |
+
+You can manage these records types. PTR records and the zones will be created and/or deleted (Zones will not be deleted unless all records are gone and _TECHNITIUM_DELETE_PTR_ZONE_ is set to true.)
 
 ## ⚙️ Configuration
 
