@@ -6,17 +6,109 @@ A specialized webhook provider for [ExternalDNS](https://github.com/kubernetes-s
 
 This project is designed to run exclusively as a **sidecar container** within the `external-dns` pod. It implements the ExternalDNS Webhook provider API to bridge Kubernetes resource discovery with Technitium's management API.
 
-## 🚀 Deployment
+## 🚀 Quick Start
+
+| Environment Variable       | Default value | Required |
+|----------------------------|---------------|----------|
+| TECHNITIUM_HOST            | localhost     | true     |
+| TECHNITIUM_PORT            | 5380          | true     |
+| TECHNITIUM_USER            |               | false    |
+| TECHNITIUM_PASSWORD        |               | false    |
+| TECHNITIUM_TOKEN           |               | false    |
+| TECHNITIUM_SESSION_TTL     |               | false    |
+| TECHNITIUM_SSL_VERIFY      | false         | false    |
+| TECHNITIUM_DRY_RUN         | false         | false    |
+| TECHNITIUM_CREATE_PTR      | false         | false    |
+| TECHNITIUM_DEFAULT_TTL     | 300           | false    |
+| TECHNITIUM_USE_TTL         | true          | false    |
+
+> Note: You have to either provide ``TECHNITIUM_USER`` and ``TECHNITIUM_PASSWORD`` or just  ``TECHNITIUM_TOKEN``
 
 ## 📄 Supported Records
 
+| Record Type  | Status    |
+|--------------|-----------|
+| A     (IPv4) | Supported |
+| AAAA  (IPv6) | Supported |
+| CNAME        | Supported |
+| TXT          | Supported |
+
+You can manage these records types. PTR records and the zones will be created and/or deleted (Zones will not be deleted unless all records are gone and _TECHNITIUM_DELETE_PTR_ZONE_ is set to true.)
+
 ## ⚙️ Configuration
+
+Setting up Technitium doesn’t have to be a chore. I’ve polished your instructions to make them more professional, readable, and authoritative while keeping that helpful peer-to-peer vibe.
+
+Follow these streamlined steps to configure your users and zones correctly.
+
+### Phase 1: User Configuration
+Before managing records, you need a user with the appropriate permissions.
+
+1.  **Navigate:** Go to the **Administration** tab and select the **Users** sub-tab.
+2.  **Create User:** Click to add a new user.
+    > **Note:** Ensure the **Username** and **Password** contain **no spaces**. The *Display Name* is purely cosmetic and can be formatted however you like.
+3.  **Assign Permissions:** Add the new user to the **DNS Administrators** group.
+4.  **Session Management:** You may set the *Session Timeout* to `0` for an indefinite session. However, the application is designed to automatically re-authenticate and refresh the API key before the timeout expires.
+
+### Phase 2: Zone Management
+The API requires an existing zone to function. Please ensure your target zone is created manually before proceeding.
+
+1.  **Navigate:** Open the **Zones** tab in the top navigation bar.
+2.  **Initialize:** Click the **Add Zone** button.
+3.  **Select Type:** Choose your required zone type.
+    * **Primary Zone:** The standard choice for most setups.
+    * **Other:** Consult your DNS Engineer if your infrastructure requires a Secondary or Forwarding zone.
+4.  **Finalize:** Click **Add** to save the configuration.
 
 ## 🏗 Development
 
-### Build
+### 🛠 Build
 
-### Test
+To compile the project locally, execute:
+
+```bash
+make build
+```
+
+To remove build artifacts and clean your workspace:
+
+```bash
+make clean
+```
+
+If you are **contributing** to this project, you must first initialize the linting environment:
+ ```bash
+ make lint-init
+ ```
+ This command installs all necessary dependencies and tools for code analysis.
+
+Once initialized, you can analyze the codebase by running:
+
+```bash
+make lint
+```
+
+To verify only the project licenses, use:
+
+```bash
+make license
+```
+
+### 🧪 Test
+
+To execute the unit testing suite, run:
+
+```bash
+make test
+```
+
+## 🚀 Contribution
+
+We welcome all Pull Requests! To ensure a smooth review process, please adhere to the following requirements:
+
+* **✅ Validation:** Ensure your changes pass all checks. Running `make lint` will automatically verify code quality and inject the required license headers into required source files.
+* **🧪 Testing:** All new functionality **must** include corresponding unit tests. A successful test pass is required for any merge to the `main` branch.
+* **✍️ Security:** The final commit of your PR must be **signed** (e.g., GPG/SSH) before it can be merged for release.
 
 ## 🤝 Acknowledgments
 

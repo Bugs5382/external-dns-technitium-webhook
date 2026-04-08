@@ -24,6 +24,8 @@ import (
 	"strings"
 
 	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/configuration"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/technitium"
+	"github.com/caarlos0/env/v11"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/provider"
 
@@ -61,8 +63,24 @@ func Init(config configuration.Config) (provider.Provider, error) {
 
 	log.Info(createMsg)
 
-	// @todo remove
-	log.Debug(domainFilter)
+	technitiumConfig := technitium.StartupConfig{}
+	if err := env.Parse(&technitiumConfig); err != nil {
+		return nil, fmt.Errorf("reading configuration failed: %v", err)
+	}
 
-	return nil, fmt.Errorf("provider implementation missing")
+	hasToken := technitiumConfig.Token != ""
+	hasCredentials := technitiumConfig.Username != "" && technitiumConfig.Password != ""
+
+	if !hasToken && !hasCredentials {
+		return nil, fmt.Errorf("missing credentials: you must provide either TECHNITIUM_TOKEN, or both TECHNITIUM_USER and TECHNITIUM_PASSWORD")
+	}
+
+	technitiumConfig.FQDNRegEx = config.RegexDomainFilter
+	technitiumConfig.NameRegEx = config.RegexNameFilter
+
+	if hasToken {
+		return technitium.NewTechnitiumProviderWithToken(&technitiumConfig, domainFilter)
+	}
+
+	return technitium.NewTechnitiumProviderWithCredentials(&technitiumConfig, domainFilter)
 }

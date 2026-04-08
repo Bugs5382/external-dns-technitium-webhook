@@ -60,10 +60,8 @@ func main() {
 		log.Fatalf("failed to initialize provider: %v", err)
 	}
 
-	// @todo remove
-	log.Debug(provider)
-
 	srv := server.NewServer()
 
 	srv.StartHealth(config)
+	srv.Start(config, provider)
 }
