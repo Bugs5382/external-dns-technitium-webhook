@@ -105,7 +105,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 		params.Set("domain", zone.Name)
 		params.Set("listAll", "true")
 
-		recData, err := p.client.DoRequest("GET", "/api/zones/records/get", params)
+		recData, err := p.client.DoRequest(http.MethodGet, "/api/zones/records/get", params)
 		if err != nil {
 			return nil, err
 		}

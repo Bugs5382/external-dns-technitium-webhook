@@ -116,7 +116,7 @@ func (c *Client) loginLocked() error {
 	defer timer.ObserveDuration()
 
 	endpoint := fmt.Sprintf("%s/api/user/login", c.BaseURL)
-	req, err := http.NewRequest(http.MethodPost, endpoint, nil)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("failed to create login request: %w", err)
@@ -184,7 +184,6 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 
 	c.mu.Lock()
 
-	// 1. Check if token is missing or expired (only if we are managing sessions)
 	if !c.isStaticToken && (c.token == "" || time.Now().After(c.tokenExpiry)) {
 		if err := c.loginLocked(); err != nil {
 			c.mu.Unlock()
@@ -196,11 +195,10 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	currentToken := c.token
 	c.mu.Unlock()
 
-	// 2. Prepare the Request
 	if params == nil {
 		params = url.Values{}
 	}
-	// Inject the authentication token (Technitium requires this via query string)
+
 	params.Set("token", currentToken)
 
 	endpoint := fmt.Sprintf("%s%s%s", c.BaseURL, c.Port, path)
@@ -212,7 +210,6 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 
 	req.URL.RawQuery = params.Encode()
 
-	// 3. Execute the Request
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
@@ -232,7 +229,6 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 		return nil, fmt.Errorf("failed to read API response body: %w", err)
 	}
 
-	// 4. Update state based on response
 	switch resp.StatusCode {
 	case http.StatusOK:
 		// A successful call resets the Technitium rolling session timer (if applicable)
