@@ -31,7 +31,7 @@ import (
 
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 // APIResponse represents the standard JSON envelope Technitium uses.
@@ -133,7 +133,7 @@ func (c *Client) loginLocked() error {
 		closeErr := resp.Body.Close()
 		if closeErr != nil {
 			metrics.FailedApiCallsTotal.Inc()
-			log.Errorf("Failed to close response body: %v", closeErr)
+			log.Error().Msgf("Failed to close response body: %v", closeErr)
 		}
 	}()
 
@@ -217,7 +217,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 		closeErr := resp.Body.Close()
 		if closeErr != nil {
 			metrics.FailedApiCallsTotal.Inc()
-			log.Errorf("Failed to close response body: %v", closeErr)
+			log.Error().Msgf("Failed to close response body: %v", closeErr)
 		}
 	}()
 

@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 // Config struct for configuration environmental variables
@@ -43,7 +43,7 @@ type Config struct {
 func Init() Config {
 	cfg := Config{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("Error reading configuration from environment: %v", err)
+		log.Fatal().Msgf("Error reading configuration from environment: %v", err)
 	}
 	return cfg
 }

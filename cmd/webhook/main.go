@@ -26,8 +26,7 @@ import (
 	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/dnsprovider"
 	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/logging"
 	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/server"
-	"github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const banner = `
@@ -46,18 +45,12 @@ var (
 func main() {
 	fmt.Printf(banner, Version, Gitsha)
 
-	// @todo remove
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
 	logging.Init()
 
 	config := configuration.Init()
 	provider, err := dnsprovider.Init(config)
 	if err != nil {
-		log.Fatalf("failed to initialize provider: %v", err)
+		log.Fatal().Msgf("failed to initialize provider: %v", err)
 	}
 
 	srv := server.NewServer()

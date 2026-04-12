@@ -20,12 +20,12 @@ limitations under the License.
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 
 	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/configuration"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/external-dns/provider"
 	"sigs.k8s.io/external-dns/provider/webhook/api"
 )
@@ -76,11 +76,11 @@ func (wh *WebhookServer) StartHealth(config configuration.Config) {
 
 		l, err := net.Listen("tcp", listenAddr)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Msgf("%s", err)
 		}
 		err = s.Serve(l)
 		if err != nil {
-			log.Fatalf("health listener stopped : %s", err)
+			log.Fatal().Msgf("health listener stopped : %s", err)
 		}
 	}()
 }

@@ -25,7 +25,7 @@ import (
 	"net/http"
 	"net/url"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 	"sigs.k8s.io/external-dns/provider"
@@ -140,7 +140,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			}
 		}
 	}
-	log.Debugf("fetched %d records from technitium", len(endpoints))
+	log.Debug().Msgf("fetched %d records from technitium", len(endpoints))
 	return endpoints, nil
 }
 
@@ -209,13 +209,13 @@ func (p *Provider) updateRecord(action string, ep *endpoint.Endpoint) error {
 		}
 
 		if p.config != nil && p.config.DryRun {
-			log.Info("Dry run: skipping..")
+			log.Info().Msg("Dry run: skipping..")
 			continue
 		}
 
 		_, err := p.client.DoRequest(http.MethodGet, path, params)
 		if err != nil {
-			log.Errorf("Failed to %s record %s: %v", action, ep.DNSName, err)
+			log.Error().Msgf("Failed to %s record %s: %v", action, ep.DNSName, err)
 			return err
 		}
 	}
