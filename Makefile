@@ -1,6 +1,6 @@
 # Apache License 2.0
 #
-# Copyright external-dns-technitium-webhook Contributors
+# Copyright 2026 external-dns-technitium-webhook Contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ lint: test license
 .PHONY: license
 license:
 	@echo -e "\n$(YELLOW)Injecting the license$(NC)"
-	golic inject -t apache2 -c "external-dns-technitium-webhook Contributors"
+	golic inject -t apache2 -c "2026 external-dns-technitium-webhook Contributors"
 
 define golic
 	@go install github.com/Bugs5382/golic@$(GOLIC_VERSION)
