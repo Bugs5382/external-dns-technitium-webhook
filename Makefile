@@ -17,7 +17,7 @@ SHELL := bash
 ARTIFACT_NAME := external-dns-technitium-webhook
 TESTPARALLELISM := 4
 WORKING_DIR := $(shell pwd)
-GOLIC_VERSION  ?= v0.1.0
+GOLIC_VERSION  ?= v0.1.2
 
 ifndef NO_COLOR
 YELLOW=\033[0;33m
@@ -42,29 +42,23 @@ test::
 
 .PHONY: lint-init
 lint-init:
-	@echo -e "\n$(CYAN)Check for lint dependencies$(NC)"
 	brew install golangci-lint
 	brew install gitleaks
 	brew install yamllint
 
 .PHONY: lint
 lint: test license
-	@echo -e "\n$(YELLOW)Running the linters$(NC)"
-	@echo -e "\n$(CYAN)golangci-lint$(NC)"
 	goimports -w ./
-	golangci-lint run -c ./.golangci.toml
-	@echo -e "\n$(CYAN)yamllint$(NC)"
+	golangci-lint run
 	yamllint .
-	@echo -e "\n$(CYAN)gitleaks$(NC)"
 	gitleaks detect . --no-git --verbose --config=.gitleaks.toml
 
 
 .PHONY: license
 license:
-	@echo -e "\n$(YELLOW)Injecting the license$(NC)"
 	golic inject -t apache2 -c "2026 external-dns-technitium-webhook Contributors"
 
 define golic
-	@go install github.com/Bugs5382/golic@$(GOLIC_VERSION)
+	@go install github.com/Bugs5382/golic/cmd/golic@$(GOLIC_VERSION)
 	$(GOBIN)/golic inject $1
 endef

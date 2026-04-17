@@ -1,0 +1,1 @@
+# External DNS Technitium Webhook Changelog
