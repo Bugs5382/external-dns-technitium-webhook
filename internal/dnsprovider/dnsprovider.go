@@ -23,13 +23,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/configuration"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/configuration"
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/technitium"
 	"github.com/caarlos0/env/v11"
+	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/provider"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Init initializes the Technitium provider with appropriate filtering.
@@ -61,7 +60,7 @@ func Init(config configuration.Config) (provider.Provider, error) {
 		createMsg += "no kind of domain filters"
 	}
 
-	log.Info(createMsg)
+	log.Info().Msg(createMsg)
 
 	technitiumConfig := technitium.StartupConfig{}
 	if err := env.Parse(&technitiumConfig); err != nil {

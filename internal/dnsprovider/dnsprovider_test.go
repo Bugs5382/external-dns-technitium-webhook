@@ -21,13 +21,11 @@ limitations under the License.
 import (
 	"testing"
 
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/configuration"
-	log "github.com/sirupsen/logrus"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/configuration"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
 
 	cases := []struct {
 		name          string

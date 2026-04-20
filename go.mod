@@ -6,7 +6,6 @@ require (
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/zerolog v1.35.0
-	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	sigs.k8s.io/external-dns v0.21.0
 )
@@ -52,6 +51,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
+	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect

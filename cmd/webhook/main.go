@@ -22,10 +22,10 @@ limitations under the License.
 import (
 	"fmt"
 
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/configuration"
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/dnsprovider"
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/logging"
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/server"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/configuration"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/dnsprovider"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/logging"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/server"
 	"github.com/rs/zerolog/log"
 )
 
@@ -50,7 +50,7 @@ func main() {
 	config := configuration.Init()
 	provider, err := dnsprovider.Init(config)
 	if err != nil {
-		log.Fatal().Msgf("failed to initialize provider: %v", err)
+		log.Fatal().Msgf("Failed to initialize provider: %v", err)
 	}
 
 	srv := server.NewServer()

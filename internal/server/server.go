@@ -23,7 +23,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/configuration"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/configuration"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/external-dns/provider"

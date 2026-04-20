@@ -33,6 +33,7 @@ permissions:
 jobs:
   Update_On_Main:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: 🚀 Update Changelog & Prep Release
     runs-on: ubuntu-latest
     steps:
       - name: Create GitHub App token
@@ -42,70 +43,47 @@ jobs:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - uses: actions/checkout@v4
+      - name: 📂 Checkout Code
+        uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
-      - name: Release Drafter (Anticipate Version)
-        id: drafter
-        uses: release-drafter/release-drafter@v6
-        with:
-          prerelease: false
-          latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update Makefile
-        run: |
-          NEXT_VER="${{ steps.drafter.outputs.resolved_version }}"
-          echo "Anticipated next version: $NEXT_VER"
-          sed -i "s/^VERSION[[:space:]]*?=.*/VERSION ?= v$NEXT_VER/" Makefile
-
-      - name: Update Changelog File
-        uses: stefanzweifel/changelog-updater-action@v1.9.1
-        with:
-          latest-version: ${{ steps.drafter.outputs.tag_name }}
-          release-notes: ${{ steps.drafter.outputs.body }}
-          release-date: ${{ steps.drafter.outputs.publish_date }}
-
-      - name: Commit and Push Version Update
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "chore(release): v${{ steps.drafter.outputs.resolved_version }} [skip ci]"
-
-  Build_and_Release:
-    if: github.event_name == 'release'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            goarch: amd64
-          - goos: linux
-            goarch: arm64
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
-          - goos: windows
-            goarch: amd64
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26.1'
+          go-version: '1.26.x'
 
-      - name: Build Binary
-        run: |
-          make build GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}
-
-      - name: Upload Binary to Release
-        uses: softprops/action-gh-release@v2
+      - name: Install Task
+        uses: arduino/setup-task@v2
         with:
-          files: bin/*
+          version: 3.x
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Release Drafter (Anticipate Version)
+        id: drafter
+        uses: release-drafter/release-drafter@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set Release Version
+        run: |
+          task update-version NEW_VERSION=v${{ steps.drafter.outputs.resolved_version }}
+
+      - name: 📤 Run Changelog Action
+        uses: Bugs5382/changelog-updater-action@v0.3.2
+        env:
+          LOG_FORMAT: text
+          RELEASE_NOTES: >-
+            ${{ steps.drafter.outputs.body }}
+          RELEASE_VERSION: v${{ steps.drafter.outputs.resolved_version }}
+        with:
+          tag: ${{ env.RELEASE_VERSION }}
+          notes: ${{ env.RELEASE_NOTES }}
+          diff: 'true'
+
+      - name: 📤 Commit and Push Version Update
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "chore(pre-release): v${{ steps.drafter.outputs.resolved_version }} [skip ci]"
