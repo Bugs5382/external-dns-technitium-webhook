@@ -64,34 +64,34 @@ The API requires an existing zone to function. Please ensure your target zone is
 
 ### 🛠 Build
 
-To compile the project locally, execute:
+To compile the project locally, install [go-task](https://taskfile.dev/docs/installation and then) execute:
 
 ```bash
-make build
+task build
 ```
 
 To remove build artifacts and clean your workspace:
 
 ```bash
-make clean
+task clean
 ```
 
 If you are **contributing** to this project, you must first initialize the linting environment:
  ```bash
- make lint-init
+ task lint-init
  ```
  This command installs all necessary dependencies and tools for code analysis.
 
 Once initialized, you can analyze the codebase by running:
 
 ```bash
-make lint
+task lint
 ```
 
 To verify only the project licenses, use:
 
 ```bash
-make license
+task license
 ```
 
 ### 🧪 Test
@@ -99,14 +99,14 @@ make license
 To execute the unit testing suite, run:
 
 ```bash
-make test
+task test
 ```
 
 ## 🚀 Contribution
 
 We welcome all Pull Requests! To ensure a smooth review process, please adhere to the following requirements:
 
-* **✅ Validation:** Ensure your changes pass all checks. Running `make lint` will automatically verify code quality and inject the required license headers into required source files.
+* **✅ Validation:** Ensure your changes pass all checks. Running `task lint` will automatically verify code quality and inject the required license headers into required source files.
 * **🧪 Testing:** All new functionality **must** include corresponding unit tests. A successful test pass is required for any merge to the `main` branch.
 * **✍️ Security:** The final commit of your PR must be **signed** (e.g., GPG/SSH) before it can be merged for release.
 
