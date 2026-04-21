@@ -15,7 +15,9 @@
 # limitations under the License.
 FROM gcr.io/distroless/static-debian12:nonroot
 
+ARG TARGETARCH
+
 USER 20000:20000
-COPY --chmod=555 external-dns-technitium-webhook /opt/external-dns-technitium-webhook/app
+COPY --chmod=555 dist/external-dns-technitium-webhook_linux_${TARGETARCH}*/external-dns-technitium-webhook /opt/external-dns-technitium-webhook/app
 
 ENTRYPOINT ["/opt/external-dns-technitium-webhook/app"]

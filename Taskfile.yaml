@@ -29,7 +29,6 @@ tasks:
     desc: Remove build artifacts
     cmds:
       - rm -rf {{.BIN_DIR}}
-  # @todo Check to make sure we have to build for a certain version for external-dns
   build:
     desc: Build the webhook binary
     sources:
@@ -38,7 +37,7 @@ tasks:
     generates:
       - "{{.BIN_DIR}}/{{.ARTIFACT_NAME}}"
     cmds:
-      - go build -o {{.BIN_DIR}}/{{.ARTIFACT_NAME}} ./cmd/webhook
+      - go build -o {{.BIN_DIR}}/{{.ARTIFACT_NAME}}-local ./cmd/webhook
       - chmod +x {{.BIN_DIR}}/{{.ARTIFACT_NAME}}
   test:
     desc: Run tests with coverage

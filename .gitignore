@@ -13,7 +13,7 @@
 
 !.release-please-manifest.json
 !release-please-config.json
-!.goreleaser.yml
+!.goreleaser.yaml
 !.gitleaks.toml
 !.yamllint
 !.golangci.toml
@@ -28,3 +28,4 @@
 
 # ...even if they are in subdirectories
 !*/
+dist/*

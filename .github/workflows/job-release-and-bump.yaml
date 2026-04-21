@@ -87,3 +87,47 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "chore(pre-release): v${{ steps.drafter.outputs.resolved_version }} [skip ci]"
+
+  Release_Binary:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    name: Publish Provider
+    strategy:
+      max-parallel: 4
+      matrix:
+        go-version: [1.26.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "${{ matrix.go-version }}"
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release via GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          args: -p 3 release --clean --timeout 60m0s
+          version: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_COMMIT_TIMESTAMP: ${{ github.event.repository.updated_at }}
+          CI_COMMIT_SHA: ${{ github.sha }}
+          CI_COMMIT_TAG: ${{ github.event.release.tag_name }}

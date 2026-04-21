@@ -1,5 +1,6 @@
 # Ignore everything
 *
+dist/*
 
 # But inject license into these files...
 !Makefile
