@@ -1,4 +1,4 @@
-package configuration
+package config
 
 /*
 Apache License 2.0
@@ -41,8 +41,6 @@ func TestInit(t *testing.T) {
 	t.Setenv("SERVER_PORT", "9999")
 	t.Setenv("DOMAIN_FILTER", "test.com,test2.com")
 	t.Setenv("EXCLUDE_DOMAIN_FILTER", "exclude.com,exclude2.com")
-	t.Setenv("REGEXP_DOMAIN_FILTER", ".*test.*")
-	t.Setenv("REGEXP_DOMAIN_FILTER_EXCLUSION", ".*exclude.*")
 	t.Setenv("REGEXP_DOMAIN_FILTER", ".*test.*")
 	t.Setenv("REGEXP_DOMAIN_FILTER_EXCLUSION", ".*exclude.*")
 

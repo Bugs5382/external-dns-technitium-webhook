@@ -31,63 +31,8 @@ import (
 	"sigs.k8s.io/external-dns/provider"
 )
 
-type Provider struct {
-	provider.BaseProvider
-	client       *Client
-	domainFilter *endpoint.DomainFilter
-	config       *StartupConfig
-}
-
-// StartupConfig clarifies the method signature
-type StartupConfig struct {
-	Host       string `env:"TECHNITIUM_HOST,required" envDefault:"localhost"`
-	Port       int    `env:"TECHNITIUM_PORT,required" envDefault:"5380"`
-	Username   string `env:"TECHNITIUM_USER"`
-	Password   string `env:"TECHNITIUM_PASSWORD"`
-	Token      string `env:"TECHNITIUM_TOKEN"`
-	SessionTTL int    `env:"TECHNITIUM_SESSION_TTL" envDefault:"30"`
-	SSLVerify  bool   `env:"TECHNITIUM_SSL_VERIFY" envDefault:"false"`
-	DryRun     bool   `env:"TECHNITIUM_DRY_RUN" envDefault:"false"`
-	CreatePTR  bool   `env:"TECHNITIUM_CREATE_PTR" envDefault:"false"`
-	DefaultTTL int    `env:"TECHNITIUM_DEFAULT_TTL" envDefault:"300"`
-	UseTTL     bool   `env:"TECHNITIUM_USE_TTL" envDefault:"true"`
-	FQDNRegEx  string
-	NameRegEx  string
-}
-
-// NewTechnitiumProviderWithToken creates a provider using the static token
-func NewTechnitiumProviderWithToken(config *StartupConfig, domainFilter *endpoint.DomainFilter) (*Provider, error) {
-	client := NewClientWithToken(
-		config.Host,
-		config.Port,
-		config.Token,
-		config.SSLVerify,
-	)
-	return &Provider{
-		client:       client,
-		domainFilter: domainFilter,
-		config:       config,
-	}, nil
-}
-
-// NewTechnitiumProviderWithCredentials creates a provider using managed sessions
-func NewTechnitiumProviderWithCredentials(config *StartupConfig, domainFilter *endpoint.DomainFilter) (*Provider, error) {
-	client := NewClientWithCredentials(
-		config.Host,
-		config.Port,
-		config.Username,
-		config.Password,
-		config.SSLVerify,
-	)
-	return &Provider{
-		client:       client,
-		domainFilter: domainFilter,
-		config:       config,
-	}, nil
-}
-
 // Records returns the list of all DNS records from the provider.
-func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
+func (p *Provider) Records(context.Context) ([]*endpoint.Endpoint, error) {
 	var endpoints []*endpoint.Endpoint
 
 	data, err := p.client.DoRequest(http.MethodGet, "/api/zones/list", nil)

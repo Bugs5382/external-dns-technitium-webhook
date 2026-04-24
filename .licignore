@@ -1,6 +1,5 @@
 # Ignore everything
 *
-dist/*
 
 # But inject license into these files...
 !Makefile
@@ -8,3 +7,6 @@ dist/*
 !Dockerfile*
 !*.yaml
 !.golic.yaml
+
+# ...even if they are in subdirectories
+dist/*

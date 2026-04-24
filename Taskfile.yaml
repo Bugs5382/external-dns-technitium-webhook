@@ -56,25 +56,25 @@ tasks:
       - yamllint .
       - gitleaks detect . --no-git --verbose --config=.gitleaks.toml
   license:
-    desc: License injection
+    desc: Inject license headers
     cmds:
-      - task: golic-inject-run
-        vars: { ARGS: '-t {{.TEMPLATE_LIC}} -c "{{.COMMON_LIC}}"' }
+      - task: golic-run
+        vars: { CMD: inject }
   license-dry:
-    desc: Dry run for license injection
+    desc: Dry run license injection
     cmds:
-      - task: golic-inject-run
-        vars: { ARGS: '-d -t {{.TEMPLATE_LIC}} -c "{{.COMMON_LIC}}"' }
+      - task: golic-run
+        vars: { CMD: inject, DRY: true }
   license-remove:
-    desc: License remove
+    desc: Remove license headers
     cmds:
-      - task: golic-remove-run
-        vars: { ARGS: '-t {{.TEMPLATE_LIC}} -c "{{.COMMON_LIC}}"' }
+      - task: golic-run
+        vars: { CMD: remove }
   license-remove-dry:
-    desc: Dry run for license remove
+    desc: Dry run license removal
     cmds:
-      - task: golic-remove-run
-        vars: { ARGS: '-d -t {{.TEMPLATE_LIC}} -c "{{.COMMON_LIC}}"' }
+      - task: golic-run
+        vars: { CMD: remove, DRY: true }
   update-version:
     desc: Updates the version variable in Taskfile.yml
     vars:
@@ -84,13 +84,8 @@ tasks:
         msg: "yq is not installed. Install it via 'brew install yq' or the GitHub Action."
     cmds:
       - yq -i '.vars.VERSION = "{{.NEW_VERSION}}"' "{{.TASKFILE_DIR}}/Taskfile.yaml"
-  golic-inject-run:
+  golic-run:
     internal: true
     cmds:
       - go install github.com/Bugs5382/golic/cmd/golic@{{.GOLIC_VERSION}}
-      - "golic inject {{.ARGS}}"
-  golic-remove-run:
-    internal: true
-    cmds:
-      - go install github.com/Bugs5382/golic/cmd/golic@{{.GOLIC_VERSION}}
-      - "golic remove {{.ARGS}}"
+      - 'golic {{.CMD}} {{if .DRY}}-d {{end}}-t {{.TEMPLATE_LIC}} -c "{{.COMMON_LIC}}"'

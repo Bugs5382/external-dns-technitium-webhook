@@ -18,6 +18,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import (
+	"encoding/json"
+	"net/http"
+	"sync"
+	"time"
+)
+
 const (
 	RecordTypeA     = "A"
 	RecordTypeAAAA  = "AAAA"
@@ -25,6 +32,26 @@ const (
 	RecordTypeTXT   = "TXT"
 	RecordTypeNS    = "NS"
 )
+
+type APIResponse struct {
+	Status       string          `json:"status"`
+	ErrorMessage string          `json:"errorMessage,omitempty"`
+	Token        string          `json:"token,omitempty"`
+	Response     json.RawMessage `json:"response,omitempty"`
+}
+
+type Client struct {
+	BaseURL    string
+	Port       string
+	Username   string
+	Password   string
+	HTTPClient *http.Client
+
+	token         string
+	tokenExpiry   time.Time
+	isStaticToken bool
+	mu            sync.Mutex
+}
 
 type Zone struct {
 	Name string `json:"name"`
@@ -35,14 +62,13 @@ type ZoneRecord struct {
 	Type  string `json:"type"`
 	TTL   int    `json:"ttl"`
 	RData struct {
-		IPAddress  string `json:"ipAddress,omitempty"`  // Used by A, AAAA
-		CNAME      string `json:"cname,omitempty"`      // Used by CNAME
-		Text       string `json:"text,omitempty"`       // Used by TXT
-		NameServer string `json:"nameServer,omitempty"` // Used by NS
+		IPAddress  string `json:"ipAddress,omitempty"`
+		CNAME      string `json:"cname,omitempty"`
+		Text       string `json:"text,omitempty"`
+		NameServer string `json:"nameServer,omitempty"`
 	} `json:"rData"`
 }
 
-// GetDataValue is a helper to pull the relevant string regardless of record type
 func (r ZoneRecord) GetDataValue() string {
 	switch r.Type {
 	case RecordTypeA, RecordTypeAAAA:
