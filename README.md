@@ -37,8 +37,6 @@ You can manage these records types. PTR records and the zones will be created an
 
 ## ⚙️ Configuration
 
-Setting up Technitium doesn’t have to be a chore. I’ve polished your instructions to make them more professional, readable, and authoritative while keeping that helpful peer-to-peer vibe.
-
 Follow these streamlined steps to configure your users and zones correctly.
 
 ### Phase 1: User Configuration
