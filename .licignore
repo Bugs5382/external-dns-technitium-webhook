@@ -7,3 +7,6 @@
 !Dockerfile*
 !*.yaml
 !.golic.yaml
+
+# ...even if they are in subdirectories
+dist/*

@@ -1,4 +1,4 @@
-package dnsprovider
+package webhook
 
 /*
 Apache License 2.0
@@ -21,38 +21,35 @@ limitations under the License.
 import (
 	"testing"
 
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/configuration"
-	log "github.com/sirupsen/logrus"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-
 	cases := []struct {
 		name          string
-		config        configuration.Config
+		cfg           config.Config
 		env           map[string]string
 		expectedError string
 	}{
 		{
-			name:   "minimal config for technitium provider (username/password)",
-			config: configuration.Config{},
+			name: "minimal config for technitium provider (username/password)",
+			cfg:  config.Config{},
 			env: map[string]string{
 				"TECHNITIUM_USER":     "user",
 				"TECHNITIUM_PASSWORD": "password",
 			},
 		},
 		{
-			name:   "minimal config for technitium provider (token)",
-			config: configuration.Config{},
+			name: "minimal config for technitium provider (token)",
+			cfg:  config.Config{},
 			env: map[string]string{
 				"TECHNITIUM_TOKEN": "token-123",
 			},
 		},
 		{
 			name: "domain filter config for technitium provider",
-			config: configuration.Config{
+			cfg: config.Config{
 				DomainFilter:   []string{"domain.com"},
 				ExcludeDomains: []string{"sub.domain.com"},
 			},
@@ -63,7 +60,7 @@ func TestInit(t *testing.T) {
 		},
 		{
 			name:          "empty configuration",
-			config:        configuration.Config{},
+			cfg:           config.Config{},
 			expectedError: "expecting error",
 		},
 	}
@@ -74,7 +71,7 @@ func TestInit(t *testing.T) {
 				t.Setenv(k, v)
 			}
 
-			dnsProvider, err := Init(tc.config)
+			dnsProvider, err := Init(tc.cfg)
 
 			if tc.expectedError != "" {
 				assert.Error(t, err, "configuration error, no mandatory Environment variables set")

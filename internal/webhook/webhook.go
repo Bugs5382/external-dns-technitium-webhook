@@ -1,4 +1,4 @@
-package dnsprovider
+package webhook
 
 /*
 Apache License 2.0
@@ -23,37 +23,35 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Bugs5382/external-dns-technitium-webhook/cmd/webhook/init/configuration"
+	"github.com/Bugs5382/external-dns-technitium-webhook/internal/config"
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/technitium"
 	"github.com/caarlos0/env/v11"
+	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/provider"
-
-	log "github.com/sirupsen/logrus"
 )
 
-// Init initializes the Technitium provider with appropriate filtering.
-func Init(config configuration.Config) (provider.Provider, error) {
+func Init(cfg config.Config) (provider.Provider, error) {
 	var domainFilter *endpoint.DomainFilter
 	createMsg := "Creating technitium provider with "
 
-	if config.RegexDomainFilter != "" {
-		createMsg += fmt.Sprintf("regexp domain filter: '%s', ", config.RegexDomainFilter)
-		if config.RegexDomainExclusion != "" {
-			createMsg += fmt.Sprintf("with exclusion: '%s', ", config.RegexDomainExclusion)
+	if cfg.RegexDomainFilter != "" {
+		createMsg += fmt.Sprintf("regexp domain filter: '%s', ", cfg.RegexDomainFilter)
+		if cfg.RegexDomainExclusion != "" {
+			createMsg += fmt.Sprintf("with exclusion: '%s', ", cfg.RegexDomainExclusion)
 		}
 		domainFilter = endpoint.NewRegexDomainFilter(
-			regexp.MustCompile(config.RegexDomainFilter),
-			regexp.MustCompile(config.RegexDomainExclusion),
+			regexp.MustCompile(cfg.RegexDomainFilter),
+			regexp.MustCompile(cfg.RegexDomainExclusion),
 		)
 	} else {
-		if len(config.DomainFilter) > 0 {
-			createMsg += fmt.Sprintf("domain filter: '%s', ", strings.Join(config.DomainFilter, ","))
+		if len(cfg.DomainFilter) > 0 {
+			createMsg += fmt.Sprintf("domain filter: '%s', ", strings.Join(cfg.DomainFilter, ","))
 		}
-		if len(config.ExcludeDomains) > 0 {
-			createMsg += fmt.Sprintf("exclude domain filter: '%s', ", strings.Join(config.ExcludeDomains, ","))
+		if len(cfg.ExcludeDomains) > 0 {
+			createMsg += fmt.Sprintf("exclude domain filter: '%s', ", strings.Join(cfg.ExcludeDomains, ","))
 		}
-		domainFilter = endpoint.NewDomainFilterWithExclusions(config.DomainFilter, config.ExcludeDomains)
+		domainFilter = endpoint.NewDomainFilterWithExclusions(cfg.DomainFilter, cfg.ExcludeDomains)
 	}
 
 	createMsg = strings.TrimSuffix(createMsg, ", ")
@@ -61,7 +59,7 @@ func Init(config configuration.Config) (provider.Provider, error) {
 		createMsg += "no kind of domain filters"
 	}
 
-	log.Info(createMsg)
+	log.Info().Msg(createMsg)
 
 	technitiumConfig := technitium.StartupConfig{}
 	if err := env.Parse(&technitiumConfig); err != nil {
@@ -75,8 +73,8 @@ func Init(config configuration.Config) (provider.Provider, error) {
 		return nil, fmt.Errorf("missing credentials: you must provide either TECHNITIUM_TOKEN, or both TECHNITIUM_USER and TECHNITIUM_PASSWORD")
 	}
 
-	technitiumConfig.FQDNRegEx = config.RegexDomainFilter
-	technitiumConfig.NameRegEx = config.RegexNameFilter
+	technitiumConfig.FQDNRegEx = cfg.RegexDomainFilter
+	technitiumConfig.NameRegEx = cfg.RegexNameFilter
 
 	if hasToken {
 		return technitium.NewTechnitiumProviderWithToken(&technitiumConfig, domainFilter)

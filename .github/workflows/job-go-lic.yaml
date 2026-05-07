@@ -31,5 +31,5 @@ jobs:
       - name: GoLic
         run: |
           export PATH=${PATH}:`go env GOPATH`/bin
-          go install github.com/Bugs5382/golic@v0.1.0
+          go install github.com/Bugs5382/golic/cmd/golic@v0.2.0
           golic inject -t apache2 -c "2026 external-dns-technitium-webhook Contributors" -x -d

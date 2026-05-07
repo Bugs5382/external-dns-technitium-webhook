@@ -60,38 +60,114 @@ The API requires an existing zone to function. Please ensure your target zone is
     * **Other:** Consult your DNS Engineer if your infrastructure requires a Secondary or Forwarding zone.
 4.  **Finalize:** Click **Add** to save the configuration.
 
+## ☸️ Kubernetes Deployment
+
+The Technitium webhook is provided as a regular OCI image released in the [GitHub container registry](https://github.com/Bugs5382/external-dns-technitium-webhook/pkgs/container/external-dns-technitium-webhook). The deployment can be performed in every way Kubernetes supports. The following example shows the deployment as a [sidecar container](https://kubernetes.io/docs/concepts/workloads/pods/#workload-resources-for-managing-pods) in the ExternalDNS pod using the [charts for ExternalDNS](https://github.com/kubernetes-sigs/external-dns/tree/master/charts/external-dns).
+
+```shell
+helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
+
+# Using a static API token (recommended):
+kubectl create secret generic technitium-credentials --from-literal=token='<YOUR_TECHNITIUM_TOKEN>'
+
+# Or using username/password:
+# kubectl create secret generic technitium-credentials \
+#   --from-literal=username='<YOUR_USERNAME>' \
+#   --from-literal=password='<YOUR_PASSWORD>'
+
+cat <<EOF > external-dns-technitium-values.yaml
+image:
+  tag: v0.0.0  # replace with the desired version
+
+# -- ExternalDNS log level.
+logLevel: debug  # reduce in production
+
+# -- if true, ExternalDNS will run in a namespaced scope (Role and Rolebinding will be namespaced too).
+namespaced: false
+
+# -- Kubernetes resources to monitor for DNS entries.
+sources:
+  - ingress
+  - service
+  - crd
+
+provider:
+  name: webhook
+  webhook:
+    image:
+      repository: ghcr.io/bugs5382/external-dns-technitium-webhook
+      tag: v0.0.0  # replace with the desired version
+      pullPolicy: IfNotPresent
+    env:
+    - name: LOG_LEVEL
+      value: debug  # reduce in production
+    - name: TECHNITIUM_HOST
+      value: "http://your-technitium-server"  # replace with your Technitium host URL
+    - name: TECHNITIUM_PORT
+      value: "5380"
+    # Token-based auth (recommended):
+    - name: TECHNITIUM_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: technitium-credentials
+          key: token
+    # Username/password auth (alternative to token):
+    # - name: TECHNITIUM_USER
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: technitium-credentials
+    #       key: username
+    # - name: TECHNITIUM_PASSWORD
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: technitium-credentials
+    #       key: password
+    - name: SERVER_PORT
+      value: "8888"  # default and recommended port for the webhook provider
+    - name: HEALTH_CHECK_PORT
+      value: "8080"  # default and recommended port for metrics and health endpoints
+    - name: TECHNITIUM_DRY_RUN
+      value: "true"  # set to "false" to allow changes to your DNS records
+EOF
+
+helm upgrade external-dns-technitium external-dns/external-dns \
+  --version 1.19.0 \
+  -f external-dns-technitium-values.yaml \
+  --install
+```
+
 ## 🏗 Development
 
 ### 🛠 Build
 
-To compile the project locally, execute:
+To compile the project locally, install [go-task](https://taskfile.dev/docs/installation and then) execute:
 
 ```bash
-make build
+task build
 ```
 
 To remove build artifacts and clean your workspace:
 
 ```bash
-make clean
+task clean
 ```
 
 If you are **contributing** to this project, you must first initialize the linting environment:
  ```bash
- make lint-init
+ task lint-init
  ```
  This command installs all necessary dependencies and tools for code analysis.
 
 Once initialized, you can analyze the codebase by running:
 
 ```bash
-make lint
+task lint
 ```
 
 To verify only the project licenses, use:
 
 ```bash
-make license
+task license
 ```
 
 ### 🧪 Test
@@ -99,14 +175,14 @@ make license
 To execute the unit testing suite, run:
 
 ```bash
-make test
+task test
 ```
 
 ## 🚀 Contribution
 
 We welcome all Pull Requests! To ensure a smooth review process, please adhere to the following requirements:
 
-* **✅ Validation:** Ensure your changes pass all checks. Running `make lint` will automatically verify code quality and inject the required license headers into required source files.
+* **✅ Validation:** Ensure your changes pass all checks. Running `task lint` will automatically verify code quality and inject the required license headers into required source files.
 * **🧪 Testing:** All new functionality **must** include corresponding unit tests. A successful test pass is required for any merge to the `main` branch.
 * **✍️ Security:** The final commit of your PR must be **signed** (e.g., GPG/SSH) before it can be merged for release.
 

@@ -1,0 +1,91 @@
+# Apache License 2.0
+#
+# Copyright 2026 external-dns-technitium-webhook Contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+version: '3'
+vars:
+  ARTIFACT_NAME: external-dns-technitium-webhook
+  TESTPARALLELISM: 4
+  VERSION: "v0.0.0"
+  GOLIC_VERSION: v0.2.0
+  COMMON_LIC: "2026 external-dns-technitium-webhook Contributors"
+  TEMPLATE_LIC: "apache2"
+  BIN_DIR: '{{.USER_WORKING_DIR}}/bin'
+  GOBIN:
+    sh: go env GOPATH/bin
+tasks:
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - rm -rf {{.BIN_DIR}}
+  build:
+    desc: Build the webhook binary
+    sources:
+      - ./cmd/webhook/**/*.go
+      - ./internal/**/*.go
+    generates:
+      - "{{.BIN_DIR}}/{{.ARTIFACT_NAME}}"
+    cmds:
+      - go build -o {{.BIN_DIR}}/{{.ARTIFACT_NAME}}-local ./cmd/webhook
+      - chmod +x {{.BIN_DIR}}/{{.ARTIFACT_NAME}}
+  test:
+    desc: Run tests with coverage
+    cmds:
+      - go test -v -tags=all -parallel {{.TESTPARALLELISM}} -timeout 2h ./...
+  lint-init:
+    desc: Install linting dependencies via Brew
+    cmds:
+      - brew install golangci-lint gitleaks yamllint
+  lint:
+    desc: Run all linters and license checks
+    deps: [test, license]
+    cmds:
+      - goimports -w ./
+      - golangci-lint run
+      - yamllint .
+      - gitleaks detect . --no-git --verbose --config=.gitleaks.toml
+  license:
+    desc: Inject license headers
+    cmds:
+      - task: golic-run
+        vars: { CMD: inject }
+  license-dry:
+    desc: Dry run license injection
+    cmds:
+      - task: golic-run
+        vars: { CMD: inject, DRY: true }
+  license-remove:
+    desc: Remove license headers
+    cmds:
+      - task: golic-run
+        vars: { CMD: remove }
+  license-remove-dry:
+    desc: Dry run license removal
+    cmds:
+      - task: golic-run
+        vars: { CMD: remove, DRY: true }
+  update-version:
+    desc: Updates the version variable in Taskfile.yml
+    vars:
+      NEW_VERSION: '{{.NEW_VERSION | default .VERSION_ENV | default "local"}}'
+    preconditions:
+      - sh: command -v yq
+        msg: "yq is not installed. Install it via 'brew install yq' or the GitHub Action."
+    cmds:
+      - yq -i '.vars.VERSION = "{{.NEW_VERSION}}"' "{{.TASKFILE_DIR}}/Taskfile.yaml"
+  golic-run:
+    internal: true
+    cmds:
+      - go install github.com/Bugs5382/golic/cmd/golic@{{.GOLIC_VERSION}}
+      - 'golic {{.CMD}} {{if .DRY}}-d {{end}}-t {{.TEMPLATE_LIC}} -c "{{.COMMON_LIC}}"'

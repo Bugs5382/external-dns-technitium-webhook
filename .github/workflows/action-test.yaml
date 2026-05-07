@@ -30,10 +30,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Go
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version-file: ./go.mod
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Dependencies
         env:
@@ -41,4 +48,4 @@ jobs:
         run: go mod download
 
       - name: Test
-        run: make test
+        run: task test

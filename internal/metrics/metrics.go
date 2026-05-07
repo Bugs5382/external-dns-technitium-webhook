@@ -34,7 +34,7 @@ var (
 
 	ApiCallLatency = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Name: "external_dns_webhook_api_call_latency_seconds",
-		Help: "Latency of Infoblox API calls",
+		Help: "Latency of Technitium API calls",
 	}, []string{"method"}) // method label to differentiate API calls
 )
 

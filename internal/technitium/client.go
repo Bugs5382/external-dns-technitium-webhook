@@ -26,7 +26,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/metrics"
@@ -34,30 +33,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// APIResponse represents the standard JSON envelope Technitium uses.
-type APIResponse struct {
-	Status       string          `json:"status"`
-	ErrorMessage string          `json:"errorMessage,omitempty"`
-	Token        string          `json:"token,omitempty"`
-	Response     json.RawMessage `json:"response,omitempty"`
-}
-
-// Client represents the Technitium DNS API client.
-type Client struct {
-	BaseURL    string
-	Port       string
-	Username   string // Optional if using a static token
-	Password   string // Optional if using a static token
-	HTTPClient *http.Client
-
-	// Session management
-	token         string
-	tokenExpiry   time.Time
-	isStaticToken bool       // Skips auto-login and session rolling if a user provided a token directly
-	mu            sync.Mutex // Protects token state during concurrent calls
-}
-
-// NewClientWithCredentials initializes a Technitium API client with credentials and SSL settings.
 func NewClientWithCredentials(baseURL string, port int, username, password string, sslVerify bool) *Client {
 	return &Client{
 		BaseURL:    baseURL,
@@ -68,7 +43,6 @@ func NewClientWithCredentials(baseURL string, port int, username, password strin
 	}
 }
 
-// NewClientWithToken initializes a Technitium API client with a static token and SSL settings.
 func NewClientWithToken(baseURL string, port int, token string, sslVerify bool) *Client {
 	return &Client{
 		BaseURL:       baseURL,
@@ -79,11 +53,10 @@ func NewClientWithToken(baseURL string, port int, token string, sslVerify bool) 
 	}
 }
 
-// Helper function to create the HTTP client with optional SSL verification
 func createHTTPClient(sslVerify bool) *http.Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: !sslVerify, // If sslVerify is false, InsecureSkipVerify is true
+			InsecureSkipVerify: !sslVerify,
 		},
 	}
 	return &http.Client{
@@ -92,16 +65,12 @@ func createHTTPClient(sslVerify bool) *http.Client {
 	}
 }
 
-// Login manually authenticates with the API and stores the session token.
-// You usually don't need to call this manually if using credentials, as DoRequest handles it automatically.
 func (c *Client) Login() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
 	return c.loginLocked()
 }
 
-// loginLocked handles the login logic without acquiring the lock.
 func (c *Client) loginLocked() error {
 	if c.isStaticToken {
 		return fmt.Errorf("login disabled: client is configured with a static API token")
@@ -111,14 +80,13 @@ func (c *Client) loginLocked() error {
 	timer := prometheus.NewTimer(metrics.ApiCallLatency.WithLabelValues("login"))
 	defer timer.ObserveDuration()
 
-	endpoint := fmt.Sprintf("%s:%s%s", c.BaseURL, c.Port, "/api/user/login")
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	reqURL := fmt.Sprintf("%s:%s%s", c.BaseURL, c.Port, "/api/user/login")
+	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
 		return fmt.Errorf("failed to create login request: %w", err)
 	}
 
-	// Technitium uses URL query parameters for almost all data inputs
 	q := req.URL.Query()
 	q.Add("user", c.Username)
 	q.Add("pass", c.Password)
@@ -130,8 +98,7 @@ func (c *Client) loginLocked() error {
 		return fmt.Errorf("login request failed: %w", err)
 	}
 	defer func() {
-		closeErr := resp.Body.Close()
-		if closeErr != nil {
+		if closeErr := resp.Body.Close(); closeErr != nil {
 			metrics.FailedApiCallsTotal.Inc()
 			log.Error().Msgf("Failed to close response body: %v", closeErr)
 		}
@@ -164,48 +131,39 @@ func (c *Client) loginLocked() error {
 		return fmt.Errorf("login succeeded but no token was returned by the server")
 	}
 
-	// Save token and set expiration based on current time + safe buffer
 	c.token = apiResp.Token
 	c.tokenExpiry = time.Now().Add(sessionBuffer())
 
 	return nil
 }
 
-// DoRequest is the central method for interacting with the API.
-// It automatically handles injecting the token, tracking session lengths, and re-authenticating (if applicable).
 func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, error) {
 	startTime := time.Now()
-
 	timer := prometheus.NewTimer(metrics.ApiCallLatency.WithLabelValues(path))
 	duration := time.Since(startTime)
 	defer timer.ObserveDuration()
 
 	c.mu.Lock()
-
 	if !c.isStaticToken && (c.token == "" || time.Now().After(c.tokenExpiry)) {
 		if err := c.loginLocked(); err != nil {
 			c.mu.Unlock()
 			return nil, fmt.Errorf("auto-login failed: %w", err)
 		}
 	}
-
-	// Copy token so we can release the lock before making the slow network call
 	currentToken := c.token
 	c.mu.Unlock()
 
 	if params == nil {
 		params = url.Values{}
 	}
-
 	params.Set("token", currentToken)
 
-	endpoint := fmt.Sprintf("%s:%s%s", c.BaseURL, c.Port, path)
-	req, err := http.NewRequest(method, endpoint, nil)
+	reqURL := fmt.Sprintf("%s:%s%s", c.BaseURL, c.Port, path)
+	req, err := http.NewRequest(method, reqURL, nil)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
 		return nil, fmt.Errorf("failed to create API request: %w", err)
 	}
-
 	req.URL.RawQuery = params.Encode()
 
 	resp, err := c.HTTPClient.Do(req)
@@ -214,8 +172,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 		return nil, fmt.Errorf("API request failed: %w", err)
 	}
 	defer func() {
-		closeErr := resp.Body.Close()
-		if closeErr != nil {
+		if closeErr := resp.Body.Close(); closeErr != nil {
 			metrics.FailedApiCallsTotal.Inc()
 			log.Error().Msgf("Failed to close response body: %v", closeErr)
 		}
@@ -231,7 +188,6 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	case http.StatusOK:
 		metrics.TotalApiCalls.Inc()
 		metrics.ApiCallLatency.WithLabelValues(path).Observe(duration.Seconds())
-		// A successful call resets the Technitium rolling session timer (if applicable)
 		if !c.isStaticToken {
 			c.mu.Lock()
 			c.tokenExpiry = time.Now().Add(sessionBuffer())
@@ -241,8 +197,6 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	case http.StatusUnauthorized, http.StatusForbidden:
 		metrics.FailedApiCallsTotal.Inc()
 		metrics.ApiCallLatency.WithLabelValues(path).Observe(duration.Seconds())
-		// If the server rejects the token, and it's a managed session, wipe it.
-		// The next call will force a fresh login. If it's static, leave it alone but return the error.
 		if !c.isStaticToken {
 			c.mu.Lock()
 			c.token = ""
@@ -254,7 +208,6 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	default:
 		metrics.FailedApiCallsTotal.Inc()
 		metrics.ApiCallLatency.WithLabelValues(path).Observe(duration.Seconds())
-		// It's good practice to handle other non-200 codes (404, 500, etc.) here
 		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}
 

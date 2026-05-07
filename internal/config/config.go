@@ -1,4 +1,4 @@
-package configuration
+package config
 
 /*
 Apache License 2.0
@@ -25,7 +25,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Config struct for configuration environmental variables
 type Config struct {
 	ServerHost           string        `env:"SERVER_HOST" envDefault:"127.0.0.1"`
 	ServerPort           int           `env:"SERVER_PORT" envDefault:"8888"`
@@ -39,7 +38,6 @@ type Config struct {
 	RegexNameFilter      string        `env:"REGEXP_NAME_FILTER" envDefault:""`
 }
 
-// Init sets up configuration by reading set environmental variables
 func Init() Config {
 	cfg := Config{}
 	if err := env.Parse(&cfg); err != nil {
