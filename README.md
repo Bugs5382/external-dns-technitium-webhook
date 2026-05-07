@@ -186,8 +186,6 @@ We welcome all Pull Requests! To ensure a smooth review process, please adhere t
 
 ## 🤝 Acknowledgments
 
-### 📄 Acknowledgments
-
 ### 🛠️ The Technitium Team
 A huge thank you to the [Technitium](https://technitium.com/) team for building such a robust, high-performance, and feature-rich open-source DNS server. This project is intended to make integrating their excellent software with Kubernetes seamless and efficient.
 
