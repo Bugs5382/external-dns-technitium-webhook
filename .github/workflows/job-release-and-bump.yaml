@@ -122,10 +122,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release via GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           args: -p 3 release --clean --timeout 60m0s
-          version: latest
+          version: '~> v2'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI_COMMIT_TIMESTAMP: ${{ github.event.repository.updated_at }}
