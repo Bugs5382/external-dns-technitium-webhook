@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussion / Question
+    url: https://github.com/Bugs5382/external-dns-technitium-webhook/discussions
+    about: Ask a question, share an idea, or get help with your setup. Use Discussions before opening an issue if you are unsure whether something is a bug.
+  - name: 🌐 ExternalDNS upstream
+    url: https://github.com/kubernetes-sigs/external-dns
+    about: For ExternalDNS core behavior (record sources, sync policy, the Webhook provider API itself), report upstream.
+  - name: 🛡 Technitium DNS Server
+    url: https://github.com/TechnitiumSoftware/DnsServer
+    about: For issues with Technitium DNS Server itself (zone behavior, API responses, server crashes), report there.
+  - name: 🔒 Security vulnerability
+    url: https://github.com/Bugs5382/external-dns-technitium-webhook/security/advisories/new
+    about: Please report security vulnerabilities privately via a GitHub Security Advisory rather than a public issue.
