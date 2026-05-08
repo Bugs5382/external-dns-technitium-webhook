@@ -24,6 +24,23 @@ This project is designed to run exclusively as a **sidecar container** within th
 
 > Note: You have to either provide ``TECHNITIUM_USER`` and ``TECHNITIUM_PASSWORD`` or just  ``TECHNITIUM_TOKEN``
 
+external-dns environment variables
+
+| Environment Variable           | Default value | Required |
+|--------------------------------|---------------|----------|
+| SERVER_HOST                    | 127.0.0.1     | true     |
+| SERVER_PORT                    | 8888          | true     |   
+| HEALTH_CHECK_PORT              | 8080          | false    |
+| SERVER_READ_TIMEOUT            |               | false    |
+| SERVER_WRITE_TIMEOUT           |               | false    |
+| DOMAIN_FILTER                  |               | true \*  |
+| EXCLUDE_DOMAIN_FILTER          |               | true \*  |
+| REGEXP_DOMAIN_FILTER           |               | true \*  |
+| REGEXP_DOMAIN_FILTER_EXCLUSION |               | true \*  |
+| REGEXP_NAME_FILTER             |               | true \*  |
+
+> \* At least one of these must be set. While external-dns itself does not require a domain filter, this webhook will pause on startup if none are provided — running unscoped would let it claim every domain.
+
 ## 📄 Supported Records
 
 | Record Type  | Status    |
@@ -74,14 +91,16 @@ kubectl create secret generic technitium-credentials --from-literal=token='<YOUR
 #   --from-literal=password='<YOUR_PASSWORD>'
 
 cat <<EOF > external-dns-technitium-values.yaml
-image:
-  tag: v0.0.0  # replace with the desired version
+# image:
+#   tag: v0.0.0  # replace with the desired version of external-dns
 
 # -- ExternalDNS log level.
 logLevel: debug  # reduce in production
 
 # -- if true, ExternalDNS will run in a namespaced scope (Role and Rolebinding will be namespaced too).
 namespaced: false
+
+# policy: sync  # sync will update the DNS records to match the desired state of the resources; default is "upsert" and should remain so until your confident everything is operational
 
 # -- Kubernetes resources to monitor for DNS entries.
 sources:
@@ -97,6 +116,8 @@ provider:
       tag: v0.0.0  # replace with the desired version
       pullPolicy: IfNotPresent
     env:
+    - name: DOMAIN_FILTER
+      value: "example.com"  # replace with your domain name
     - name: LOG_LEVEL
       value: debug  # reduce in production
     - name: TECHNITIUM_HOST
