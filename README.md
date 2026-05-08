@@ -6,6 +6,8 @@ A specialized webhook provider for [ExternalDNS](https://github.com/kubernetes-s
 
 This project is designed to run exclusively as a **sidecar container** within the `external-dns` pod. It implements the ExternalDNS Webhook provider API to bridge Kubernetes resource discovery with Technitium's management API.
 
+> **Namespace layout:** This has been tested with Technitium and external-dns running in **different namespaces** as well as in the **same namespace**. Co-locating them in a single namespace is convenient for local homelab setups; separating them is the typical pattern for production clusters.
+
 ## 🚀 Quick Start
 
 | Environment Variable       | Default value | Required |
@@ -22,9 +24,9 @@ This project is designed to run exclusively as a **sidecar container** within th
 | TECHNITIUM_DEFAULT_TTL     | 300           | false    |
 | TECHNITIUM_USE_TTL         | true          | false    |
 
-> Note: You have to either provide ``TECHNITIUM_USER`` and ``TECHNITIUM_PASSWORD`` or just  ``TECHNITIUM_TOKEN``
+> Note: You must provide either both `TECHNITIUM_USER` and `TECHNITIUM_PASSWORD`, or just `TECHNITIUM_TOKEN`.
 
-external-dns environment variables
+external-dns environment variables:
 
 | Environment Variable           | Default value | Required |
 |--------------------------------|---------------|----------|
@@ -59,11 +61,20 @@ Follow these streamlined steps to configure your users and zones correctly.
 ### Phase 1: User Configuration
 Before managing records, you need a user with the appropriate permissions.
 
+#### Username and Password
+
 1.  **Navigate:** Go to the **Administration** tab and select the **Users** sub-tab.
 2.  **Create User:** Click to add a new user.
     > **Note:** Ensure the **Username** and **Password** contain **no spaces**. The *Display Name* is purely cosmetic and can be formatted however you like.
 3.  **Assign Permissions:** Add the new user to the **DNS Administrators** group.
 4.  **Session Management:** You may set the *Session Timeout* to `0` for an indefinite session. However, the application is designed to automatically re-authenticate and refresh the API key before the timeout expires.
+
+#### Token Creation
+
+1.  **Navigate:** After creating the user, head back to the **Sessions** tab and click **Create Token**.
+2.  **Select User:** Choose the username you just created. Using the built-in `admin` account works but is not advised. You may optionally give the token a name.
+3.  **Create & Copy:** Press **Create**, then copy the token immediately. As with any token, if you navigate away before copying it, you will have to start over.
+4.  **Store:** Save the token as a Kubernetes secret (see the deployment example below).
 
 ### Phase 2: Zone Management
 The API requires an existing zone to function. Please ensure your target zone is created manually before proceeding.
@@ -83,6 +94,7 @@ The Technitium webhook is provided as a regular OCI image released in the [GitHu
 helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
 
 # Using a static API token (recommended):
+# The secret must live in the same namespace as the external-dns / webhook pod.
 kubectl create secret generic technitium-credentials --from-literal=token='<YOUR_TECHNITIUM_TOKEN>'
 
 # Or using username/password:
@@ -159,7 +171,7 @@ helm upgrade external-dns-technitium external-dns/external-dns \
 
 ### 🛠 Build
 
-To compile the project locally, install [go-task](https://taskfile.dev/docs/installation and then) execute:
+To compile the project locally, install [go-task](https://taskfile.dev/docs/installation) and then execute:
 
 ```bash
 task build
