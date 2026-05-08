@@ -209,12 +209,74 @@ To execute the unit testing suite, run:
 task test
 ```
 
+### 🔁 End-to-End Tests
+
+A live integration test stands up a [`kind`](https://kind.sigs.k8s.io/) cluster and runs the full pipeline — Technitium DNS Server, this webhook, and ExternalDNS — to confirm that a Kubernetes Service annotation produces a real record inside a Technitium zone. **The E2E job is a required check on `main`; PRs cannot merge until it is green.**
+
+**What it does**
+
+1. Builds the webhook image locally and loads it into the `kind` cluster as `external-dns-technitium-webhook:e2e`.
+2. Installs Technitium via the [`Bugs5382/helm-technitium-chart`](https://github.com/Bugs5382/helm-technitium-chart) chart with `admin` / `admin` bootstrapped through `config.adminPassword`.
+3. Logs in to the Technitium API and creates a Primary zone (`example.test`).
+4. Installs ExternalDNS (chart `1.19.0`) with this webhook as a sidecar, pointed at the in-cluster Technitium Service.
+5. Applies a test `Service` annotated with `external-dns.alpha.kubernetes.io/hostname=e2e.example.test` and `target=10.0.0.42`.
+6. Polls the Technitium API until the expected `A` record appears in the zone (or fails with full diagnostics).
+
+**Where the files live**
+
+| Path                                       | Purpose                                                       |
+|--------------------------------------------|---------------------------------------------------------------|
+| `.github/workflows/job-e2e.yaml`           | GitHub Actions workflow — runs on PRs and pushes to `main`.   |
+| `__test__/e2e/run.sh`                      | Orchestration script (idempotent; safe to re-run).            |
+| `__test__/e2e/values-technitium.yaml`      | Helm values for the Technitium chart.                         |
+| `__test__/e2e/values-external-dns.yaml`    | Helm values for ExternalDNS + this webhook as a sidecar.      |
+| `__test__/e2e/workload.yaml`               | The Service whose annotations drive the record.               |
+
+**Helm chart version policy**
+
+The workflow checks out [`Bugs5382/helm-technitium-chart`](https://github.com/Bugs5382/helm-technitium-chart) at the **default branch (`main`) — i.e. the latest commit** — on every run. This intentionally exposes any chart-side breakage early. If a chart change breaks the E2E:
+
+1. Confirm the failure reproduces locally (see below).
+2. If the chart change is the cause, decide whether to update the values in `__test__/e2e/` or to pin the workflow to a known-good chart ref. Either change goes in the same PR as the fix.
+3. The `workflow_dispatch` trigger accepts a `chart_ref` input (branch, tag, or SHA) so you can re-run the job against a specific chart version without editing the workflow.
+
+When you cut a release of this webhook, also note the chart commit SHA you validated against in the release notes — that is what was actually exercised by CI.
+
+**Running it locally**
+
+You need `kind`, `helm`, `kubectl`, `docker`, `curl`, and `jq` on your `$PATH`.
+
+```bash
+# 1. Build and load the webhook image into a kind cluster named "e2e".
+mkdir -p dist/external-dns-technitium-webhook_linux_amd64
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+  go build -trimpath \
+  -o dist/external-dns-technitium-webhook_linux_amd64/external-dns-technitium-webhook \
+  ./cmd/webhook
+docker build --build-arg TARGETARCH=amd64 -t external-dns-technitium-webhook:e2e .
+
+kind create cluster --name e2e
+kind load docker-image external-dns-technitium-webhook:e2e --name e2e
+
+# 2. Clone the chart next to this repo (or anywhere; pass the path through env).
+git clone https://github.com/Bugs5382/helm-technitium-chart.git ../helm-technitium-chart
+
+# 3. Run the orchestrator.
+TECHNITIUM_CHART_PATH=../helm-technitium-chart/technitium ./__test__/e2e/run.sh
+
+# 4. Tear down when finished.
+kind delete cluster --name e2e
+```
+
+The script accepts a few overrides via environment variables — see the comments at the top of `__test__/e2e/run.sh` for the full list (`ZONE`, `RECORD`, `RECORD_TARGET`, `ADMIN_USER`, `ADMIN_PASS`, `WEBHOOK_IMAGE`, `EXTERNAL_DNS_CHART_VERSION`).
+
 ## 🚀 Contribution
 
 We welcome all Pull Requests! To ensure a smooth review process, please adhere to the following requirements:
 
 * **✅ Validation:** Ensure your changes pass all checks. Running `task lint` will automatically verify code quality and inject the required license headers into required source files.
-* **🧪 Testing:** All new functionality **must** include corresponding unit tests. A successful test pass is required for any merge to the `main` branch.
+* **🧪 Unit Tests:** All new functionality **must** include corresponding unit tests. A successful test pass is required for any merge to the `main` branch.
+* **🔁 E2E Tests:** The end-to-end job (`.github/workflows/job-e2e.yaml`) must be green before merge. If your change touches the Technitium API surface, the webhook server, or the deployment shape, run it locally first — see [End-to-End Tests](#-end-to-end-tests) above.
 * **✍️ Security:** The final commit of your PR must be **signed** (e.g., GPG/SSH) before it can be merged for release.
 
 ## 🤝 Acknowledgments

@@ -16,6 +16,11 @@
 name: E2E
 on:
   workflow_dispatch:
+    inputs:
+      chart_ref:
+        description: 'Bugs5382/helm-technitium-chart git ref (branch, tag, or SHA). Defaults to main = latest chart.'
+        required: false
+        default: main
   pull_request:
     branches:
       - main
@@ -39,6 +44,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Bugs5382/helm-technitium-chart
+          # Track the chart's default branch (latest) for normal CI runs;
+          # workflow_dispatch can override with a specific tag/SHA when
+          # debugging a chart-side regression.
+          ref: ${{ github.event.inputs.chart_ref || 'main' }}
           path: helm-technitium-chart
           fetch-depth: 1
 
