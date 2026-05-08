@@ -30,4 +30,5 @@
 # ...even if they are in subdirectories
 !*/
 !.github/**
+!__test__/e2e/**
 dist/*
