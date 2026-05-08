@@ -23,9 +23,11 @@
 !CHANGELOG.md
 !CODEOWNERS
 !README.md
+!SECURITY.md
 !LICENSE
 !renovate.json
 
 # ...even if they are in subdirectories
 !*/
+!.github/**
 dist/*

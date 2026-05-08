@@ -1,0 +1,84 @@
+name: ✨ Feature Request
+description: Propose a new capability or an enhancement to existing behavior.
+title: "feat: <short summary>"
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement! Before filing, please:
+        - Search [existing issues](https://github.com/Bugs5382/external-dns-technitium-webhook/issues?q=is%3Aissue) and [Discussions](https://github.com/Bugs5382/external-dns-technitium-webhook/discussions) to avoid duplicates.
+        - If the feature really belongs upstream in [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) or [Technitium DNS Server](https://github.com/TechnitiumSoftware/DnsServer), file it there instead.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and discussions and did not find a duplicate.
+          required: true
+        - label: This feature belongs in **this webhook** (not upstream ExternalDNS or Technitium itself).
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What use case is not currently served? What are you trying to accomplish?
+      placeholder: I run multiple Technitium servers behind a load balancer and want the webhook to fail over to a secondary host on connection errors.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How could this work? New env var, new endpoint, change to existing behavior, etc. Be as concrete as you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried, or other designs you ruled out and why.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope of change
+      description: Your best guess — maintainers will reassess.
+      options:
+        - Configuration only (new env var, default change)
+        - New record type or filter behavior
+        - Provider-level change (auth, session, retries)
+        - Observability (logs, metrics, tracing)
+        - Documentation only
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Is this a breaking change?
+      options:
+        - "No"
+        - "Yes"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Are you willing to contribute?
+      options:
+        - label: I am willing to open a PR for this.
+        - label: I can help test a PR from someone else.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Links, screenshots, related upstream issues.
