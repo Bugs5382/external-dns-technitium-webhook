@@ -14,15 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 name: Label Checker
-# Every PR must carry a categorizing label. The release-drafter autolabeler
-# derives it from the conventional-commit title; the check then confirms it.
+# Every PR must carry a categorizing label. This workflow derives the label from
+# the conventional-commit PR title and applies it, then confirms it is present.
 #
-# Labeling and the check live in ONE workflow on purpose. The autolabeler
-# applies the label with the default GITHUB_TOKEN, and GitHub does not fire new
-# workflow events (e.g. `labeled`) from GITHUB_TOKEN actions, so a separate
-# checker keyed on the `labeled` event would never re-run after the label was
-# added and would stay failed on a fresh PR. Running the check as a job that
-# `needs` the autolabel job guarantees the label exists in the same run.
+# Labeling and the check live in ONE workflow on purpose. The label is applied
+# with the default GITHUB_TOKEN, and GitHub does not fire new workflow events
+# (e.g. `labeled`) from GITHUB_TOKEN actions, so a separate checker keyed on the
+# `labeled` event would never re-run after the label was added and would stay
+# failed on a fresh PR. Running the check as a job that `needs` the autolabel job
+# guarantees the label is applied in the same run.
+#
+# The label is applied deterministically with `gh` rather than relying on
+# release-drafter's autolabeler, which does not reliably apply labels in this
+# configuration. The release-drafter.yml autolabeler block is still used at draft
+# time; this job is what guarantees a categorizing label on every PR.
 on:
   pull_request:
     types: [opened, reopened, edited, synchronize]
@@ -37,17 +42,35 @@ jobs:
     name: Autolabel
     runs-on: ubuntu-latest
     steps:
-      # Best-effort: Dependabot-triggered runs get a read-only GITHUB_TOKEN, so
-      # release-drafter cannot apply a label. Don't fail the job on that --
-      # Dependabot already sets a categorizing label (`dependencies`) from
-      # dependabot.yml, so the check below still passes.
-      - name: Apply labels from PR title
+      # Map the conventional-commit prefix in the PR title to a categorizing
+      # label and apply it. Best-effort: Dependabot-triggered runs get a
+      # read-only GITHUB_TOKEN so the apply is skipped -- Dependabot already sets
+      # `dependencies` from dependabot.yml, so the check below still passes.
+      - name: Apply label from PR title
         continue-on-error: true
-        uses: release-drafter/release-drafter@v6
-        with:
-          disable-releaser: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Derive the label from the conventional-commit type/prefix.
+          label=""
+          case "$TITLE" in
+            *"!:"*|*"BREAKING CHANGE"*|*"BREAKING-CHANGE"*) label="breaking" ;;
+            feat\(*\)!:*|feat!:*)                            label="breaking" ;;
+            feat:*|feat\(*\):*)                              label="enhancement" ;;
+            fix:*|fix\(*\):*)                                label="fix" ;;
+            perf:*|perf\(*\):*)                              label="performance" ;;
+            refactor:*|refactor\(*\):*)                      label="refactor" ;;
+            docs:*|docs\(*\):*)                              label="documentation" ;;
+            security:*|security\(*\):*)                      label="security" ;;
+            build:*|build\(*\):*|chore\(deps*\):*)           label="dependencies" ;;
+            ci:*|ci\(*\):*|test:*|test\(*\):*|style:*|style\(*\):*|chore:*|chore\(*\):*) label="skip-changelog" ;;
+            *) echo "PR title is not a recognized conventional-commit type; leaving labels alone."; exit 0 ;;
+          esac
+          echo "Applying label: $label"
+          gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$label" >/dev/null
 
   categorizing-label:
     name: Categorizing label present
