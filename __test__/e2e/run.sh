@@ -35,12 +35,12 @@ cleanup_pf() { [[ -n "$PF_PID" ]] && kill "$PF_PID" 2>/dev/null || true; PF_PID=
 trap cleanup_pf EXIT
 
 log()  { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
-fail() { printf '\n\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
+fail() { printf '\n\033[1;31mx %s\033[0m\n' "$*" >&2; exit 1; }
 
 require() { command -v "$1" >/dev/null || fail "missing required tool: $1"; }
 require kubectl; require helm; require curl; require jq
 
-# Port-forward 5380 → localhost:5380 in the background, wait until reachable.
+# Port-forward 5380 -> localhost:5380 in the background, wait until reachable.
 port_forward_technitium() {
   cleanup_pf
   kubectl -n "$TECHNITIUM_NAMESPACE" port-forward svc/technitium 5380:5380 \
@@ -92,7 +92,7 @@ create_zone() {
 # our values, so 3 minutes of slack is plenty.
 wait_for_record() {
   local token="$1"
-  log "Waiting for $RECORD → $RECORD_TARGET in zone $ZONE"
+  log "Waiting for $RECORD -> $RECORD_TARGET in zone $ZONE"
   local resp
   for i in $(seq 1 36); do
     resp=$(curl -sS --get \
@@ -199,4 +199,4 @@ TOKEN="$(login)"
 wait_for_record "$TOKEN"
 cleanup_pf
 
-log "✅ e2e PASSED — $RECORD published to zone $ZONE"
+log "e2e PASSED — $RECORD published to zone $ZONE"
