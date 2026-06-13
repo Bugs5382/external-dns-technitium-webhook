@@ -26,7 +26,6 @@ import (
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/logging"
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/server"
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/webhook"
-	"github.com/rs/zerolog/log"
 )
 
 const banner = `
@@ -48,12 +47,14 @@ func main() {
 	logging.Init()
 
 	cfg := config.Init()
-	p, err := webhook.Init(cfg)
-	if err != nil {
-		log.Fatal().Msgf("Failed to initialize provider: %v", err)
-	}
 
 	srv := server.NewServer()
 	srv.StartHealth(cfg)
+
+	p, err := webhook.Init(cfg)
+	if err != nil {
+		webhook.Pause(err)
+	}
+
 	srv.Start(cfg, p)
 }

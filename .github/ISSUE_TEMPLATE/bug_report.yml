@@ -1,0 +1,155 @@
+name: 🐛 Bug Report
+description: Report a defect in the external-dns-technitium-webhook provider.
+title: "bug: <short summary>"
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill out as much of the form as you can — the more context you provide, the faster the issue can be triaged.
+
+        Before submitting, please:
+        - Search [existing issues](https://github.com/Bugs5382/external-dns-technitium-webhook/issues?q=is%3Aissue) to avoid duplicates.
+        - Confirm the problem is in **this webhook**, not in [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) or [Technitium DNS Server](https://github.com/TechnitiumSoftware/DnsServer) itself.
+        - **Do not paste secrets** (tokens, passwords, internal hostnames you would not publish). Redact before pasting.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I have redacted any secrets, tokens, or sensitive hostnames from my logs and config.
+          required: true
+        - label: I am running a supported version of this webhook (latest release or `main`).
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing what is wrong.
+      placeholder: When `policy: sync` is enabled, AAAA records are deleted on every reconcile.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Include error messages if any.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: A minimal, ordered list someone else can follow to reproduce the issue.
+      placeholder: |
+        1. Deploy external-dns with the values shown below.
+        2. Create a Service of type LoadBalancer named `foo`.
+        3. Observe that the AAAA record is created and then deleted on the next sync.
+    validations:
+      required: true
+
+  - type: input
+    id: webhook-version
+    attributes:
+      label: Webhook version / image tag
+      description: Output of `docker image inspect ghcr.io/bugs5382/external-dns-technitium-webhook:<tag>` or the tag from your Helm values.
+      placeholder: v0.1.1 (or commit sha if running from main)
+    validations:
+      required: true
+
+  - type: input
+    id: external-dns-version
+    attributes:
+      label: ExternalDNS version
+      placeholder: v0.18.0 (chart 1.19.0)
+    validations:
+      required: true
+
+  - type: input
+    id: technitium-version
+    attributes:
+      label: Technitium DNS Server version
+      description: Visible in the Technitium admin UI footer or `/api/admin/server/getInfo`.
+      placeholder: 13.4.2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: auth-mode
+    attributes:
+      label: Authentication mode
+      options:
+        - Token (TECHNITIUM_TOKEN)
+        - Username + Password (TECHNITIUM_USER / TECHNITIUM_PASSWORD)
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: namespace-layout
+    attributes:
+      label: Namespace layout
+      description: Are external-dns and Technitium running in the same namespace, or split?
+      options:
+        - Same namespace (homelab-style)
+        - Different namespaces
+        - Technitium runs outside Kubernetes
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: kubernetes-version
+    attributes:
+      label: Kubernetes distribution & version
+      description: e.g. `kubectl version --short`, k3s, EKS 1.30, Talos 1.7…
+      placeholder: k3s v1.30.4+k3s1
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Relevant environment variables
+      description: |
+        The webhook env you have set, **with secrets redacted**. Include domain filters in particular — most issues are filter-scoping problems.
+      render: yaml
+      placeholder: |
+        DOMAIN_FILTER: example.com
+        REGEXP_NAME_FILTER: ""
+        TECHNITIUM_HOST: http://technitium.dns.svc.cluster.local
+        TECHNITIUM_PORT: "5380"
+        TECHNITIUM_TOKEN: "<redacted>"
+        TECHNITIUM_DRY_RUN: "false"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Webhook logs at `LOG_LEVEL=debug` covering one full reconcile that shows the bug. Include the corresponding external-dns logs if relevant. Trim to what is needed and redact hostnames if sensitive.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Anything else worth knowing — recent changes, network setup, related issues, screenshots.

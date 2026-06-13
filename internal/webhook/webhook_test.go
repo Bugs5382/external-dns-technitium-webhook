@@ -34,7 +34,9 @@ func TestInit(t *testing.T) {
 	}{
 		{
 			name: "minimal config for technitium provider (username/password)",
-			cfg:  config.Config{},
+			cfg: config.Config{
+				DomainFilter: []string{"domain.com"},
+			},
 			env: map[string]string{
 				"TECHNITIUM_USER":     "user",
 				"TECHNITIUM_PASSWORD": "password",
@@ -42,7 +44,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			name: "minimal config for technitium provider (token)",
-			cfg:  config.Config{},
+			cfg: config.Config{
+				DomainFilter: []string{"domain.com"},
+			},
 			env: map[string]string{
 				"TECHNITIUM_TOKEN": "token-123",
 			},
@@ -62,6 +66,13 @@ func TestInit(t *testing.T) {
 			name:          "empty configuration",
 			cfg:           config.Config{},
 			expectedError: "expecting error",
+		},
+		{
+			name: "credentials set but no domain scope manages all FQDNs",
+			cfg:  config.Config{},
+			env: map[string]string{
+				"TECHNITIUM_TOKEN": "token-123",
+			},
 		},
 	}
 

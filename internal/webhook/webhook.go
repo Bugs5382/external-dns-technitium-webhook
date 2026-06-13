@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/config"
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/technitium"
@@ -31,7 +32,44 @@ import (
 	"sigs.k8s.io/external-dns/provider"
 )
 
+// pauseInterval controls how often Pause re-emits the configuration
+// error while the container is held alive. Exposed as a var so tests
+// can shorten it.
+var pauseInterval = 5 * time.Minute
+
+// Pause holds the goroutine forever after logging the configuration
+// error that prevented startup. It is the failure mode for invalid
+// configuration so the container stays Running with visible logs
+// instead of looping through CrashLoopBackOff and losing the message.
+func Pause(err error) {
+	log.Error().Err(err).Msg("configuration error — container paused, fix the environment and restart the pod")
+	for {
+		time.Sleep(pauseInterval)
+		log.Warn().Err(err).Msg("still paused — fix the environment and restart the pod")
+	}
+}
+
+func hasDomainScope(cfg config.Config) bool {
+	for _, d := range cfg.DomainFilter {
+		if d != "" {
+			return true
+		}
+	}
+	for _, d := range cfg.ExcludeDomains {
+		if d != "" {
+			return true
+		}
+	}
+	return cfg.RegexDomainFilter != "" ||
+		cfg.RegexDomainExclusion != "" ||
+		cfg.RegexNameFilter != ""
+}
+
 func Init(cfg config.Config) (provider.Provider, error) {
+	if !hasDomainScope(cfg) {
+		log.Warn().Msg("no domain filter configured — this webhook will manage ALL FQDNs on the Technitium server (every zone is in scope). Set DOMAIN_FILTER, EXCLUDE_DOMAIN_FILTER, REGEXP_DOMAIN_FILTER, REGEXP_DOMAIN_FILTER_EXCLUSION, or REGEXP_NAME_FILTER to narrow the scope.")
+	}
+
 	var domainFilter *endpoint.DomainFilter
 	createMsg := "Creating technitium provider with "
 
