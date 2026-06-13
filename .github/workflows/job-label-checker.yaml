@@ -1,0 +1,85 @@
+# Apache License 2.0
+#
+# Copyright 2026 external-dns-technitium-webhook Contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+name: Label Checker
+# Every PR must carry a categorizing label. The release-drafter autolabeler
+# derives it from the conventional-commit title; the check then confirms it.
+#
+# Labeling and the check live in ONE workflow on purpose. The autolabeler
+# applies the label with the default GITHUB_TOKEN, and GitHub does not fire new
+# workflow events (e.g. `labeled`) from GITHUB_TOKEN actions, so a separate
+# checker keyed on the `labeled` event would never re-run after the label was
+# added and would stay failed on a fresh PR. Running the check as a job that
+# `needs` the autolabel job guarantees the label exists in the same run.
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  autolabel:
+    name: Autolabel
+    runs-on: ubuntu-latest
+    steps:
+      # Best-effort: Dependabot-triggered runs get a read-only GITHUB_TOKEN, so
+      # release-drafter cannot apply a label. Don't fail the job on that --
+      # Dependabot already sets a categorizing label (`dependencies`) from
+      # dependabot.yml, so the check below still passes.
+      - name: Apply labels from PR title
+        continue-on-error: true
+        uses: release-drafter/release-drafter@v6
+        with:
+          disable-releaser: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  categorizing-label:
+    name: Categorizing label present
+    needs: [autolabel]
+    # Run even if autolabel was skipped/failed (e.g. a Dependabot read-only
+    # token); the label may already be present from the PR title or dependabot.yml.
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      # Poll the LIVE labels via the API rather than the trigger payload. The
+      # autolabel job above applies the label with the default GITHUB_TOKEN; that
+      # write takes a moment to be visible, and the `opened` event payload this
+      # run was triggered with never carries it. Retrying against the API closes
+      # that race so a fresh PR passes on the first run instead of needing a rerun.
+      - name: Verify a categorizing label is present
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          allowed="breaking enhancement bug fix performance refactor changed deprecated removed security documentation dependencies skip-changelog"
+          for attempt in 1 2 3 4 5 6; do
+            labels="$(gh api "repos/$REPO/issues/$PR/labels" --jq '.[].name' 2>/dev/null || true)"
+            for l in $labels; do
+              for a in $allowed; do
+                if [ "$l" = "$a" ]; then echo "Found categorizing label: $l"; exit 0; fi
+              done
+            done
+            echo "No categorizing label yet (attempt $attempt/6); waiting for the autolabeler..."
+            sleep 10
+          done
+          echo "No categorizing label present. Add one of: $allowed"
+          exit 1

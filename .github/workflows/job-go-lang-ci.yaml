@@ -21,16 +21,19 @@ on:
   pull_request:
     branches:
       - main
+permissions:
+  contents: read
 jobs:
   lint:
     name: GolangCI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: GolangCI
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.10.1
+          version: v2.12.2
           args: --timeout=3m
