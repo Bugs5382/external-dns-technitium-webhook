@@ -67,7 +67,7 @@ func hasDomainScope(cfg config.Config) bool {
 
 func Init(cfg config.Config) (provider.Provider, error) {
 	if !hasDomainScope(cfg) {
-		return nil, fmt.Errorf("no domain scope configured: set at least one of DOMAIN_FILTER, EXCLUDE_DOMAIN_FILTER, REGEXP_DOMAIN_FILTER, REGEXP_DOMAIN_FILTER_EXCLUSION, REGEXP_NAME_FILTER — running without one would let this webhook claim every domain")
+		log.Warn().Msg("no domain filter configured — this webhook will manage ALL FQDNs on the Technitium server (every zone is in scope). Set DOMAIN_FILTER, EXCLUDE_DOMAIN_FILTER, REGEXP_DOMAIN_FILTER, REGEXP_DOMAIN_FILTER_EXCLUSION, or REGEXP_NAME_FILTER to narrow the scope.")
 	}
 
 	var domainFilter *endpoint.DomainFilter

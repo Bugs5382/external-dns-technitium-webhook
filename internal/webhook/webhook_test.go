@@ -68,12 +68,11 @@ func TestInit(t *testing.T) {
 			expectedError: "expecting error",
 		},
 		{
-			name: "credentials set but no domain scope",
+			name: "credentials set but no domain scope manages all FQDNs",
 			cfg:  config.Config{},
 			env: map[string]string{
 				"TECHNITIUM_TOKEN": "token-123",
 			},
-			expectedError: "expecting error",
 		},
 	}
 

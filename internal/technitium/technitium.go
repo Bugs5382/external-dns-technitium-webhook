@@ -50,7 +50,10 @@ func (p *Provider) Records(context.Context) ([]*endpoint.Endpoint, error) {
 	}
 
 	for _, zone := range zoneResp.Response.Zones {
-		if !p.domainFilter.Match(zone.Name) {
+		// When no domain filter is configured the filter is empty and matches
+		// every zone, so all FQDNs are returned. A nil filter is treated the
+		// same (match all) rather than skipping every zone.
+		if p.domainFilter != nil && !p.domainFilter.Match(zone.Name) {
 			continue
 		}
 
