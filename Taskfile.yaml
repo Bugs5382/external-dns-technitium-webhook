@@ -17,7 +17,7 @@ version: '3'
 vars:
   ARTIFACT_NAME: external-dns-technitium-webhook
   TESTPARALLELISM: 4
-  VERSION: "v0.1.1"
+  VERSION: "v0.2.0"
   GOLIC_VERSION: v0.2.0
   COMMON_LIC: "2026 external-dns-technitium-webhook Contributors"
   TEMPLATE_LIC: "apache2"

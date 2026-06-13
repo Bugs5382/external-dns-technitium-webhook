@@ -1,5 +1,25 @@
 # External DNS Technitium Webhook Changelog
 
+## v0.2.0 - 2026-06-13
+
+### What Changed 👀
+
+#### 🚀 Features
+
+- feat: v0.1.1 @Bugs5382 (#19)
+
+#### 🐛 Bug Fixes
+
+- feat: v0.1.1 @Bugs5382 (#19)
+
+#### 📄 Documentation
+
+- feat: v0.1.1 @Bugs5382 (#19)
+
+### Extra
+
+**Full Changelog**: https://github.com/Bugs5382/external-dns-technitium-webhook/compare/v0.1.0...v0.2.0
+
 ## v0.1.0 - 2026-05-07
 
 ### What Changed 👀
