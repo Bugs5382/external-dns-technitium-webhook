@@ -13,42 +13,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-name: Test
+name: Gitleaks
+# Secret scan on EVERY push and PR -- no paths-ignore, because a secret can land
+# in any file, docs included. Hard failure: the action exits non-zero on a finding.
 on:
   push:
-    paths-ignore:
-      - '**.md'
   pull_request:
-    branches:
-      - main
+    branches: [main]
 permissions:
   contents: read
 jobs:
-  test:
-    name: 🧪 Test
+  gitleaks:
+    name: 🔒 Gitleaks (secret scan)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ./go.mod
-
-      - name: Install Task
-        uses: arduino/setup-task@v2
-        with:
-          version: 3.x
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Dependencies
-        env:
-          GOPROXY: https://proxy.golang.org,direct
-        run: go mod download
-
-      - name: Test
-        run: task test
