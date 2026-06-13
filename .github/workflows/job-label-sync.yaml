@@ -13,42 +13,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-name: Test
+name: Label Sync
+# Reconciles the repo's labels to the canonical set (.github/labels.yml):
+# creates/updates the canonical labels AND deletes any label not in the file,
+# so every repo carries exactly the standard set (no stale GitHub defaults or
+# leftover release labels).
 on:
+  workflow_dispatch:
   push:
-    paths-ignore:
-      - '**.md'
-  pull_request:
-    branches:
-      - main
+    branches: [main]
+    paths: ['.github/labels.yml']
 permissions:
-  contents: read
+  issues: write
 jobs:
-  test:
-    name: 🧪 Test
+  labeler:
+    name: Sync labels
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+      - uses: crazy-max/ghaction-github-labeler@v5
         with:
-          fetch-depth: 0
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ./go.mod
-
-      - name: Install Task
-        uses: arduino/setup-task@v2
-        with:
-          version: 3.x
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Dependencies
-        env:
-          GOPROXY: https://proxy.golang.org,direct
-        run: go mod download
-
-      - name: Test
-        run: task test
+          yaml-file: .github/labels.yml
+          skip-delete: false
+          dry-run: false

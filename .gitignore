@@ -1,34 +1,22 @@
-# Ignore everything
-*
+# Build output
+/bin/
+/dist/
 
-# But not these files...
-!/.gitignore
+# Go test / coverage artifacts
+covprofile
+*.out
+*.test
 
-!*.go
-!go.sum
-!go.mod
+# go-task local cache
+/.task/
 
-!Makefile
-!*.yaml
+# Editors / OS
+/.idea/
+/.vscode/
+.DS_Store
 
-!.release-please-manifest.json
-!release-please-config.json
-!.goreleaser.yaml
-!.gitleaks.toml
-!.yamllint
-!.golangci.toml
-!.golic.yaml
-!.licignore
-!Dockerfile
-!CHANGELOG.md
-!CODEOWNERS
-!README.md
-!SECURITY.md
-!LICENSE
-!renovate.json
+# Scratch
+temp/
 
-# ...even if they are in subdirectories
-!*/
-!.github/**
-!__test__/e2e/**
-dist/*
+# Local design notes (non-tracked).
+plan/
