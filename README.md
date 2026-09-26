@@ -1,6 +1,6 @@
-# 🌐 External DNS :: Technitium Webhook
+# External DNS :: Technitium Webhook 🌐
 
-A specialized webhook provider for [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) that enables automated record management for **Technitium DNS Server**.
+> 🔗 A specialized webhook provider for [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) that enables automated record management for **Technitium DNS Server**.
 
 ## 🛠 Integration Overview
 
@@ -169,7 +169,7 @@ helm upgrade external-dns-technitium external-dns/external-dns \
 
 ## 🏗 Development
 
-### 🛠 Build
+### Build
 
 To compile the project locally, install [go-task](https://taskfile.dev/docs/installation) and then execute:
 
@@ -201,7 +201,7 @@ To verify only the project licenses, use:
 task license
 ```
 
-### 🧪 Test
+### Test
 
 To execute the unit testing suite, run:
 
@@ -209,7 +209,7 @@ To execute the unit testing suite, run:
 task test
 ```
 
-### 🔁 End-to-End Tests
+### End-to-End Tests
 
 A live integration test stands up a [`kind`](https://kind.sigs.k8s.io/) cluster and runs the full pipeline — Technitium DNS Server, this webhook, and ExternalDNS — to confirm that a Kubernetes Service annotation produces a real record inside a Technitium zone. **The E2E job is a required check on `main`; PRs cannot merge until it is green.**
 
@@ -274,20 +274,20 @@ The script accepts a few overrides via environment variables — see the comment
 
 We welcome all Pull Requests! To ensure a smooth review process, please adhere to the following requirements:
 
-* **✅ Validation:** Ensure your changes pass all checks. Running `task lint` will automatically verify code quality and inject the required license headers into required source files.
-* **🧪 Unit Tests:** All new functionality **must** include corresponding unit tests. A successful test pass is required for any merge to the `main` branch.
-* **🔁 E2E Tests:** The end-to-end job (`.github/workflows/job-e2e.yaml`) must be green before merge. If your change touches the Technitium API surface, the webhook server, or the deployment shape, run it locally first — see [End-to-End Tests](#-end-to-end-tests) above.
-* **✍️ Security:** The final commit of your PR must be **signed** (e.g., GPG/SSH) before it can be merged for release.
+* ✅ **Validation:** Ensure your changes pass all checks. Running `task lint` will automatically verify code quality and inject the required license headers into required source files.
+* 🧪 **Unit Tests:** All new functionality **must** include corresponding unit tests. A successful test pass is required for any merge to the `main` branch.
+* 🔁 **E2E Tests:** The end-to-end job (`.github/workflows/job-e2e.yaml`) must be green before merge. If your change touches the Technitium API surface, the webhook server, or the deployment shape, run it locally first — see [End-to-End Tests](#-end-to-end-tests) above.
+* ✍️ **Security:** The final commit of your PR must be **signed** (e.g., GPG/SSH) before it can be merged for release.
 
 ## 🤝 Acknowledgments
 
-### 🛠️ The Technitium Team
+### The Technitium Team
 A huge thank you to the [Technitium](https://technitium.com/) team for building such a robust, high-performance, and feature-rich open-source DNS server. This project is intended to make integrating their excellent software with Kubernetes seamless and efficient.
 
-### ❤️ Personal Thanks
+### Personal Thanks
 Building and maintaining open-source tools takes time and focus. I want to give a special thanks to **my wife, my daughter, and my son**. Your support and patience allow me the space to be a "geek" and contribute back to the community. You are my greatest motivation!
 
-### 🏗️ Credits
+### Credits
 A special thanks to the [external-dns-infoblox-webhook](https://github.com/AbsaOSS/external-dns-infoblox-webhook) team. This plugin is based on their excellent work—thank you for providing such a solid foundation for the community!
 
 ## 📄 License
