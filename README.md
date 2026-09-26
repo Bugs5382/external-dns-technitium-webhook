@@ -218,7 +218,7 @@ A live integration test stands up a [`kind`](https://kind.sigs.k8s.io/) cluster 
 1. Builds the webhook image locally and loads it into the `kind` cluster as `external-dns-technitium-webhook:e2e`.
 2. Installs Technitium via the [`Bugs5382/helm-technitium-chart`](https://github.com/Bugs5382/helm-technitium-chart) chart with `admin` / `admin` bootstrapped through `config.adminPassword`.
 3. Logs in to the Technitium API and creates a Primary zone (`example.test`).
-4. Installs ExternalDNS (chart `1.19.0`) with this webhook as a sidecar, pointed at the in-cluster Technitium Service.
+4. Installs ExternalDNS (chart `1.19.0`) with this webhook as a sidecar, pointed at the in-cluster Technitium API Service (`technitium-web`).
 5. Applies a test `Service` annotated with `external-dns.alpha.kubernetes.io/hostname=e2e.example.test` and `target=10.0.0.42`.
 6. Polls the Technitium API until the expected `A` record appears in the zone (or fails with full diagnostics).
 
@@ -268,7 +268,7 @@ TECHNITIUM_CHART_PATH=../helm-technitium-chart/technitium ./__test__/e2e/run.sh
 kind delete cluster --name e2e
 ```
 
-The script accepts a few overrides via environment variables — see the comments at the top of `__test__/e2e/run.sh` for the full list (`ZONE`, `RECORD`, `RECORD_TARGET`, `ADMIN_USER`, `ADMIN_PASS`, `WEBHOOK_IMAGE`, `EXTERNAL_DNS_CHART_VERSION`).
+The script accepts a few overrides via environment variables — see the comments at the top of `__test__/e2e/run.sh` for the full list (`ZONE`, `RECORD`, `RECORD_TARGET`, `ADMIN_USER`, `ADMIN_PASS`, `TECHNITIUM_SERVICE`, `WEBHOOK_IMAGE`, `EXTERNAL_DNS_CHART_VERSION`).
 
 ## 🚀 Contribution
 
