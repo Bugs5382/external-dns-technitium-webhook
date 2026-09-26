@@ -20,7 +20,6 @@ limitations under the License.
 
 import (
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -49,14 +48,14 @@ func setLogLevel() {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 		return
 	}
-	if parsedLevel, err := zerolog.ParseLevel(levelStr); err == nil {
+	// zerolog.ParseLevel accepts names and any int8, so an in-range number such
+	// as 44 still parses. Only accept real levels, trace (-1) to disabled (7);
+	// anything else falls back to info instead of wrapping (gosec G115, #28).
+	parsedLevel, err := zerolog.ParseLevel(levelStr)
+	if err == nil && parsedLevel >= zerolog.TraceLevel && parsedLevel <= zerolog.Disabled {
 		zerolog.SetGlobalLevel(parsedLevel)
 		return
 	}
-	if levelInt, err := strconv.Atoi(levelStr); err == nil {
-		zerolog.SetGlobalLevel(zerolog.Level(levelInt))
-		return
-	}
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	log.Debug().Msgf("Invalid log level '%s', defaulting to info", levelStr)
+	log.Warn().Str("LOG_LEVEL", levelStr).Msg("invalid log level, defaulting to info")
 }
