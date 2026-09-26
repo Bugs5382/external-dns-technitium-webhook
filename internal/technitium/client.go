@@ -39,7 +39,8 @@ func NewClientWithCredentials(baseURL string, port int, username, password strin
 		Port:       strconv.Itoa(port),
 		Username:   username,
 		Password:   password,
-		HTTPClient: createHTTPClient(sslVerify),
+		HTTPClient: createHTTPClient(baseURL, sslVerify),
+		SessionTTL: defaultSessionTTL,
 	}
 }
 
@@ -49,12 +50,12 @@ func NewClientWithToken(baseURL string, port int, token string, sslVerify bool) 
 		Port:          strconv.Itoa(port),
 		token:         token,
 		isStaticToken: true,
-		HTTPClient:    createHTTPClient(sslVerify),
+		HTTPClient:    createHTTPClient(baseURL, sslVerify),
 	}
 }
 
-func createHTTPClient(sslVerify bool) *http.Client {
-	if !sslVerify {
+func createHTTPClient(baseURL string, sslVerify bool) *http.Client {
+	if warnInsecureTLS(baseURL, sslVerify) {
 		log.Warn().Msg("TECHNITIUM_SSL_VERIFY is false: the Technitium server certificate will not be verified")
 	}
 	tr := &http.Transport{
@@ -145,7 +146,8 @@ func (c *Client) loginLocked() error {
 	}
 
 	c.token = apiResp.Token
-	c.tokenExpiry = time.Now().Add(sessionBuffer())
+	c.renewSessionLocked()
+	log.Info().Dur("sessionTTL", c.SessionTTL).Time("expires", c.tokenExpiry).Msg("logged in to technitium; reusing this session until it expires or is rejected")
 
 	return nil
 }
@@ -157,7 +159,7 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	defer timer.ObserveDuration()
 
 	c.mu.Lock()
-	if !c.isStaticToken && (c.token == "" || time.Now().After(c.tokenExpiry)) {
+	if !c.isStaticToken && c.sessionNeedsLoginLocked() {
 		if err := c.loginLocked(); err != nil {
 			c.mu.Unlock()
 			return nil, fmt.Errorf("auto-login failed: %w", err)
@@ -210,8 +212,10 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 			return nil, err
 		}
 		if !c.isStaticToken {
+			// Technitium's session timeout counts from the last use, so a
+			// successful call pushes the client-side expiry out as well.
 			c.mu.Lock()
-			c.tokenExpiry = time.Now().Add(sessionBuffer())
+			c.renewSessionLocked()
 			c.mu.Unlock()
 		}
 
@@ -271,4 +275,30 @@ func (c *Client) checkAPIStatus(path string, body []byte) error {
 
 	log.Error().Str("path", path).Str("status", envelope.Status).Str("error", envelope.ErrorMessage).Msg("technitium API call failed")
 	return apiErr
+}
+
+// sessionNeedsLoginLocked reports whether a session client must log in before
+// the next call: it has no token, or the token's lifetime has passed. A zero
+// expiry with a token set means the lifetime is unlimited (TTL 0). The caller
+// holds c.mu.
+func (c *Client) sessionNeedsLoginLocked() bool {
+	if c.token == "" {
+		log.Debug().Msg("no technitium session token; logging in")
+		return true
+	}
+	if !c.tokenExpiry.IsZero() && time.Now().After(c.tokenExpiry) {
+		log.Debug().Time("expired", c.tokenExpiry).Msg("technitium session lifetime passed; logging in again")
+		return true
+	}
+	return false
+}
+
+// renewSessionLocked moves the session expiry to one lifetime from now, or
+// clears it when the lifetime is unlimited. The caller holds c.mu.
+func (c *Client) renewSessionLocked() {
+	if lifetime := sessionLifetime(c.SessionTTL); lifetime > 0 {
+		c.tokenExpiry = time.Now().Add(lifetime)
+		return
+	}
+	c.tokenExpiry = time.Time{}
 }

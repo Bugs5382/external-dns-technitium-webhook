@@ -82,7 +82,7 @@ func TestRedactURL(t *testing.T) {
 // client refuses anything older than TLS 1.2.
 func TestCreateHTTPClient_TLSConfig(t *testing.T) {
 	for _, verify := range []bool{true, false} {
-		tr, ok := createHTTPClient(verify).Transport.(*http.Transport)
+		tr, ok := createHTTPClient("https://technitium", verify).Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.Equal(t, !verify, tr.TLSClientConfig.InsecureSkipVerify)
 		assert.Equal(t, uint16(tls.VersionTLS12), tr.TLSClientConfig.MinVersion)

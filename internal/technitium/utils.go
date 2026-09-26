@@ -21,6 +21,7 @@ limitations under the License.
 import (
 	"errors"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -30,9 +31,27 @@ var secretParams = []string{"pass", "token"}
 
 const redacted = "REDACTED"
 
-func sessionBuffer() time.Duration {
-	config := StartupConfig{}
-	return time.Duration(config.SessionTTL) * time.Minute
+// defaultSessionTTL matches the TECHNITIUM_SESSION_TTL default and
+// Technitium's default user session timeout.
+const defaultSessionTTL = 30 * time.Minute
+
+// sessionLifetime is how long a session token is reused before the client
+// logs in again: the configured TTL less a 10% margin, so the token is
+// replaced before Technitium expires it. A TTL of 0 or less means the client
+// never expires the token itself and relies on Technitium rejecting it with
+// "invalid-token" (issue #31).
+func sessionLifetime(ttl time.Duration) time.Duration {
+	if ttl <= 0 {
+		return 0
+	}
+	return ttl - ttl/10
+}
+
+// warnInsecureTLS reports whether skipping certificate verification actually
+// affects this host. It only matters for https; a plain http host has no
+// certificate to verify.
+func warnInsecureTLS(baseURL string, sslVerify bool) bool {
+	return !sslVerify && strings.HasPrefix(strings.ToLower(baseURL), "https://")
 }
 
 // redactURL returns raw with the values of credential query parameters
