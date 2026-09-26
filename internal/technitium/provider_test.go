@@ -33,6 +33,7 @@ import (
 
 // newTestProvider wires a Provider to a mock Technitium API that serves two
 // zones (alpha.com, beta.org), each with a single A record host.<zone>.
+// Responses carry "status": "ok" like the real API does.
 func newTestProvider(t *testing.T, domainFilter *endpoint.DomainFilter) *Provider {
 	t.Helper()
 
@@ -40,6 +41,7 @@ func newTestProvider(t *testing.T, domainFilter *endpoint.DomainFilter) *Provide
 		switch r.URL.Path {
 		case "/api/zones/list":
 			_ = json.NewEncoder(w).Encode(map[string]any{
+				"status": "ok",
 				"response": map[string]any{
 					"zones": []map[string]string{{"name": "alpha.com"}, {"name": "beta.org"}},
 				},
@@ -47,6 +49,7 @@ func newTestProvider(t *testing.T, domainFilter *endpoint.DomainFilter) *Provide
 		case "/api/zones/records/get":
 			domain := r.URL.Query().Get("domain")
 			_ = json.NewEncoder(w).Encode(map[string]any{
+				"status": "ok",
 				"response": map[string]any{
 					"records": []map[string]any{
 						{

@@ -20,6 +20,8 @@ limitations under the License.
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -67,6 +69,37 @@ type ZoneRecord struct {
 		Text       string `json:"text,omitempty"`
 		NameServer string `json:"nameServer,omitempty"`
 	} `json:"rData"`
+}
+
+// Values of the "status" field in a Technitium API response. Technitium
+// answers HTTP 200 for failed calls too, so this field, not the HTTP status,
+// says whether a call worked (issue #29).
+const (
+	apiStatusOK           = "ok"
+	apiStatusInvalidToken = "invalid-token"
+)
+
+// ErrInvalidToken is wrapped by an APIError whose status is "invalid-token":
+// the session expired or the API token was rejected.
+var ErrInvalidToken = errors.New("technitium rejected the token")
+
+// APIError is a Technitium API call that returned a status other than "ok".
+type APIError struct {
+	Path    string
+	Status  string
+	Message string
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("technitium %s returned status %q: %s", e.Path, e.Status, e.Message)
+}
+
+// Unwrap lets errors.Is(err, ErrInvalidToken) match token rejections.
+func (e *APIError) Unwrap() error {
+	if e.Status == apiStatusInvalidToken {
+		return ErrInvalidToken
+	}
+	return nil
 }
 
 func (r ZoneRecord) GetDataValue() string {
