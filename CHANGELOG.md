@@ -6,6 +6,7 @@
 
 #### 🐛 Bug Fixes
 
+- fix(technitium): treat API error statuses in HTTP 200 responses as failures @Bugs5382 (#32)
 - fix(security): patch x/net and x/text, resolve gosec findings, keep credentials out of logs @Bugs5382 (#30)
 - fix(e2e): target the chart's split web and DNS Services @Bugs5382 (#26)
 
