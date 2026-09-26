@@ -4,6 +4,10 @@
 
 ### What Changed 👀
 
+#### 🐛 Bug Fixes
+
+- fix(e2e): target the chart's split web and DNS Services @Bugs5382 (#26)
+
 #### 📄 Documentation
 
 - docs(readme): apply the lite emoji treatment @Bugs5382 (#24)
