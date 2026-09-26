@@ -24,7 +24,13 @@ config:
   # Username is fixed as "admin" by Technitium.
   adminPassword: "admin"
 
-# kind has no LoadBalancer controller; ClusterIP is enough for the webhook
-# to reach the API and for kubectl port-forward to verify the zone.
+# The chart splits its Service in two: service.web (API and console, named
+# technitium-web) and service.dns (DNS ports, named technitium-dns). The DNS
+# Service defaults to LoadBalancer, and kind has no LoadBalancer controller,
+# so helm --wait would never finish. ClusterIP is enough for the webhook to
+# reach the API and for kubectl port-forward to verify the zone.
 service:
-  type: ClusterIP
+  web:
+    type: ClusterIP
+  dns:
+    type: ClusterIP
