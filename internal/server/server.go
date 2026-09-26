@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/Bugs5382/external-dns-technitium-webhook/internal/config"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -63,10 +64,8 @@ func (wh *WebhookServer) StartHealth(cfg config.Config) {
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 		})
-		s := &http.Server{
-			Addr:    listenAddr,
-			Handler: m,
-		}
+		s := newHealthServer(listenAddr, m)
+		log.Info().Str("addr", listenAddr).Msg("starting health and metrics listener")
 		l, err := net.Listen("tcp", listenAddr)
 		if err != nil {
 			log.Fatal().Msgf("%s", err)
@@ -75,4 +74,25 @@ func (wh *WebhookServer) StartHealth(cfg config.Config) {
 			log.Fatal().Msgf("health listener stopped: %s", err)
 		}
 	}()
+}
+
+// Timeouts for the health and metrics listener. Probes and scrapes are small
+// and fast, so these are generous and still stop a slow client from holding a
+// connection open (gosec G112, issue #28).
+const (
+	healthReadHeaderTimeout = 5 * time.Second
+	healthReadTimeout       = 10 * time.Second
+	healthWriteTimeout      = 30 * time.Second
+	healthIdleTimeout       = 60 * time.Second
+)
+
+func newHealthServer(addr string, h http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           h,
+		ReadHeaderTimeout: healthReadHeaderTimeout,
+		ReadTimeout:       healthReadTimeout,
+		WriteTimeout:      healthWriteTimeout,
+		IdleTimeout:       healthIdleTimeout,
+	}
 }

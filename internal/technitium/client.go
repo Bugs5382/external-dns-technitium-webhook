@@ -54,9 +54,17 @@ func NewClientWithToken(baseURL string, port int, token string, sslVerify bool) 
 }
 
 func createHTTPClient(sslVerify bool) *http.Client {
+	if !sslVerify {
+		log.Warn().Msg("TECHNITIUM_SSL_VERIFY is false: the Technitium server certificate will not be verified")
+	}
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: !sslVerify,
+			MinVersion: tls.VersionTLS12,
+			// Verification is on unless the operator turns it off with
+			// TECHNITIUM_SSL_VERIFY=false, which exists for in-cluster
+			// Technitium servers that use self-signed certificates. The
+			// warning above makes that choice visible at startup.
+			InsecureSkipVerify: !sslVerify, // #nosec G402 -- opt-out controlled by TECHNITIUM_SSL_VERIFY
 		},
 	}
 	return &http.Client{
@@ -92,11 +100,16 @@ func (c *Client) loginLocked() error {
 	q.Add("pass", c.Password)
 	req.URL.RawQuery = q.Encode()
 
+	log.Debug().Str("path", "/api/user/login").Msg("logging in to technitium")
+	start := time.Now()
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
+		err = redactErr(err)
+		log.Error().Err(err).Dur("duration", time.Since(start)).Msg("technitium login request failed")
 		return fmt.Errorf("login request failed: %w", err)
 	}
+	log.Debug().Int("status", resp.StatusCode).Dur("duration", time.Since(start)).Msg("technitium login responded")
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			metrics.FailedApiCallsTotal.Inc()
@@ -166,11 +179,16 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	}
 	req.URL.RawQuery = params.Encode()
 
+	log.Trace().Str("method", method).Str("path", path).Str("url", redactURL(req.URL.String())).Msg("calling technitium API")
+	callStart := time.Now()
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		metrics.FailedApiCallsTotal.Inc()
+		err = redactErr(err)
+		log.Error().Err(err).Str("path", path).Dur("duration", time.Since(callStart)).Msg("technitium API request failed")
 		return nil, fmt.Errorf("API request failed: %w", err)
 	}
+	log.Debug().Str("path", path).Int("status", resp.StatusCode).Dur("duration", time.Since(callStart)).Msg("technitium API responded")
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			metrics.FailedApiCallsTotal.Inc()
