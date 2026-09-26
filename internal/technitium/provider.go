@@ -19,6 +19,9 @@ limitations under the License.
 */
 
 import (
+	"time"
+
+	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/provider"
 )
@@ -52,6 +55,8 @@ func NewTechnitiumProviderWithCredentials(config *StartupConfig, domainFilter *e
 		config.Password,
 		config.SSLVerify,
 	)
+	client.SessionTTL = time.Duration(config.SessionTTL) * time.Minute
+	log.Debug().Dur("sessionTTL", client.SessionTTL).Msg("technitium session client configured")
 	return &Provider{
 		client:       client,
 		domainFilter: domainFilter,

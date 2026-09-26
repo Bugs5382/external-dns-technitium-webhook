@@ -17,7 +17,7 @@ This project is designed to run exclusively as a **sidecar container** within th
 | TECHNITIUM_USER            |               | false    |
 | TECHNITIUM_PASSWORD        |               | false    |
 | TECHNITIUM_TOKEN           |               | false    |
-| TECHNITIUM_SESSION_TTL     |               | false    |
+| TECHNITIUM_SESSION_TTL     | 30            | false    |
 | TECHNITIUM_SSL_VERIFY      | false         | false    |
 | TECHNITIUM_DRY_RUN         | false         | false    |
 | TECHNITIUM_CREATE_PTR      | false         | false    |
@@ -25,6 +25,10 @@ This project is designed to run exclusively as a **sidecar container** within th
 | TECHNITIUM_USE_TTL         | true          | false    |
 
 > Note: You must provide either both `TECHNITIUM_USER` and `TECHNITIUM_PASSWORD`, or just `TECHNITIUM_TOKEN`.
+
+With `TECHNITIUM_USER` and `TECHNITIUM_PASSWORD`, the webhook logs in once and reuses that session. `TECHNITIUM_SESSION_TTL` is the user's session timeout in Technitium, in minutes. Every successful call extends the session, and the webhook logs in again shortly before it would expire, or as soon as Technitium rejects the session. Set it to `0` when the user's session timeout in Technitium is `0` (never expires); the webhook then logs in again only when the session is rejected.
+
+`TECHNITIUM_SSL_VERIFY` only matters when `TECHNITIUM_HOST` starts with `https://`. With it set to `false`, the webhook skips certificate verification and logs a warning at startup.
 
 external-dns environment variables:
 
@@ -165,6 +169,28 @@ helm upgrade external-dns-technitium external-dns/external-dns \
   --version 1.19.0 \
   -f external-dns-technitium-values.yaml \
   --install
+```
+
+### Technitium without persistence
+
+The [Technitium chart](https://github.com/Bugs5382/helm-technitium-chart) can run without a PVC (`persistence.enabled: false`). In that mode Technitium starts blank on every restart, so an API token created in the web console is lost, and the webhook can no longer use `TECHNITIUM_TOKEN`. Log in as `admin` instead, with the password from the Secret the chart creates. That Secret keeps its value across restarts and upgrades.
+
+The Secret is named `<fullname>-admin`, where the chart's full name is `<release>-technitium`, or just `<release>` when the release name already contains `technitium`. Its key is `password`. `secretKeyRef` only reads from the pod's own namespace, so external-dns and Technitium must share a namespace, or the Secret has to be copied into the external-dns namespace.
+
+```yaml
+provider:
+  name: webhook
+  webhook:
+    env:
+      - name: TECHNITIUM_HOST
+        value: "http://<fullname>-web"  # the chart's API Service
+      - name: TECHNITIUM_USER
+        value: admin
+      - name: TECHNITIUM_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: <fullname>-admin
+            key: password
 ```
 
 ## 🏗 Development

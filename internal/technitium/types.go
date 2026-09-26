@@ -52,6 +52,7 @@ type Client struct {
 	token         string
 	tokenExpiry   time.Time
 	isStaticToken bool
+	SessionTTL    time.Duration
 	mu            sync.Mutex
 }
 
