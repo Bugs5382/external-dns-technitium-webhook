@@ -206,6 +206,9 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	case http.StatusOK:
 		metrics.TotalApiCalls.Inc()
 		metrics.ApiCallLatency.WithLabelValues(path).Observe(duration.Seconds())
+		if err := c.checkAPIStatus(path, body); err != nil {
+			return nil, err
+		}
 		if !c.isStaticToken {
 			c.mu.Lock()
 			c.tokenExpiry = time.Now().Add(sessionBuffer())
@@ -230,4 +233,42 @@ func (c *Client) DoRequest(method, path string, params url.Values) ([]byte, erro
 	}
 
 	return body, nil
+}
+
+// checkAPIStatus reads the Technitium response envelope. Technitium answers
+// HTTP 200 for failed calls and reports the outcome in "status", so anything
+// other than "ok" is returned as an *APIError (issue #29). On "invalid-token"
+// a session client drops its token so the next call logs in again; a static
+// token cannot be refreshed, so the rejection is only reported.
+func (c *Client) checkAPIStatus(path string, body []byte) error {
+	var envelope APIResponse
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		metrics.FailedApiCallsTotal.Inc()
+		log.Error().Err(err).Str("path", path).Int("bytes", len(body)).Msg("technitium API returned a body that is not JSON")
+		return fmt.Errorf("technitium %s returned a body that is not JSON: %w", path, err)
+	}
+
+	if envelope.Status == apiStatusOK {
+		log.Trace().Str("path", path).Msg("technitium API status ok")
+		return nil
+	}
+
+	metrics.FailedApiCallsTotal.Inc()
+	apiErr := &APIError{Path: path, Status: envelope.Status, Message: envelope.ErrorMessage}
+
+	if envelope.Status == apiStatusInvalidToken {
+		if c.isStaticToken {
+			log.Error().Str("path", path).Str("status", envelope.Status).Msg("technitium rejected the static API token; check TECHNITIUM_TOKEN")
+			return apiErr
+		}
+		c.mu.Lock()
+		c.token = ""
+		c.tokenExpiry = time.Time{}
+		c.mu.Unlock()
+		log.Warn().Str("path", path).Str("status", envelope.Status).Msg("technitium session token rejected; it was dropped and the next call logs in again")
+		return apiErr
+	}
+
+	log.Error().Str("path", path).Str("status", envelope.Status).Str("error", envelope.ErrorMessage).Msg("technitium API call failed")
+	return apiErr
 }

@@ -21,6 +21,7 @@ limitations under the License.
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -37,6 +38,7 @@ func (p *Provider) Records(context.Context) ([]*endpoint.Endpoint, error) {
 
 	data, err := p.client.DoRequest(http.MethodGet, "/api/zones/list", nil)
 	if err != nil {
+		log.Error().Err(err).Msg("listing technitium zones failed")
 		return nil, err
 	}
 
@@ -54,8 +56,10 @@ func (p *Provider) Records(context.Context) ([]*endpoint.Endpoint, error) {
 		// every zone, so all FQDNs are returned. A nil filter is treated the
 		// same (match all) rather than skipping every zone.
 		if p.domainFilter != nil && !p.domainFilter.Match(zone.Name) {
+			log.Trace().Str("zone", zone.Name).Msg("zone outside the domain filter, skipping")
 			continue
 		}
+		log.Debug().Str("zone", zone.Name).Msg("reading zone records")
 
 		params := url.Values{}
 		params.Set("domain", zone.Name)
@@ -64,6 +68,7 @@ func (p *Provider) Records(context.Context) ([]*endpoint.Endpoint, error) {
 
 		recData, err := p.client.DoRequest(http.MethodGet, "/api/zones/records/get", params)
 		if err != nil {
+			log.Error().Err(err).Str("zone", zone.Name).Msg("reading technitium zone records failed")
 			return nil, err
 		}
 
@@ -94,31 +99,35 @@ func (p *Provider) Records(context.Context) ([]*endpoint.Endpoint, error) {
 
 // ApplyChanges applies the given set of changes (Create, Update, Delete) to the DNS provider.
 func (p *Provider) ApplyChanges(_ context.Context, changes *plan.Changes) error {
+	log.Debug().
+		Int("create", len(changes.Create)).
+		Int("updateOld", len(changes.UpdateOld)).
+		Int("updateNew", len(changes.UpdateNew)).
+		Int("delete", len(changes.Delete)).
+		Msg("applying changes")
 
-	for _, ep := range changes.Create {
-		if err := p.updateRecord("add", ep); err != nil {
-			return err
+	// Attempt every change even when one fails, so a single record Technitium
+	// rejects does not hold back the rest of the batch. The failures are
+	// returned together and external-dns retries them on the next sync
+	// (issue #29).
+	var errs []error
+	apply := func(action string, eps []*endpoint.Endpoint) {
+		for _, ep := range eps {
+			if err := p.updateRecord(action, ep); err != nil {
+				errs = append(errs, err)
+			}
 		}
 	}
+	apply("add", changes.Create)
+	apply("delete", changes.UpdateOld)
+	apply("add", changes.UpdateNew)
+	apply("delete", changes.Delete)
 
-	for _, ep := range changes.UpdateOld {
-		if err := p.updateRecord("delete", ep); err != nil {
-			return err
-		}
+	if len(errs) > 0 {
+		log.Error().Int("failed", len(errs)).Msg("some changes were not applied")
+		return errors.Join(errs...)
 	}
-
-	for _, ep := range changes.UpdateNew {
-		if err := p.updateRecord("add", ep); err != nil {
-			return err
-		}
-	}
-
-	for _, ep := range changes.Delete {
-		if err := p.updateRecord("delete", ep); err != nil {
-			return err
-		}
-	}
-
+	log.Debug().Msg("all changes applied")
 	return nil
 }
 
@@ -131,6 +140,7 @@ func (p *Provider) updateRecord(action string, ep *endpoint.Endpoint) error {
 		path = "/api/zones/records/delete"
 	}
 
+	var errs []error
 	for _, target := range ep.Targets {
 		params := url.Values{}
 		params.Set("domain", ep.DNSName)
@@ -163,11 +173,13 @@ func (p *Provider) updateRecord(action string, ep *endpoint.Endpoint) error {
 
 		_, err := p.client.DoRequest(http.MethodGet, path, params)
 		if err != nil {
-			log.Error().Msgf("Failed to %s record %s: %v", action, ep.DNSName, err)
-			return err
+			log.Error().Err(err).Str("action", action).Str("name", ep.DNSName).Str("type", ep.RecordType).Msg("technitium record change failed")
+			errs = append(errs, fmt.Errorf("%s %s %s: %w", action, ep.RecordType, ep.DNSName, err))
+			continue
 		}
+		log.Info().Str("action", action).Str("name", ep.DNSName).Str("type", ep.RecordType).Str("target", target).Msg("technitium record changed")
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // AdjustEndpoints allows the provider to normalize endpoints (like TTLs) before they are processed.
