@@ -25,15 +25,22 @@ permissions:
   contents: read
 jobs:
   lint:
-    name: GolangCI
+    name: 🔍 GolangCI
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
       - name: GolangCI
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.12.2
+          # Build from source with the job's Go, so a newer go.mod never
+          # outruns the toolchain the prebuilt binary was compiled with.
+          install-mode: goinstall
           args: --timeout=3m
