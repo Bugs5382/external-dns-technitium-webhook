@@ -14,11 +14,15 @@
 #   RECORD                 FQDN we expect external-dns to publish
 #   RECORD_TARGET          Expected A-record value
 #   ADMIN_USER / ADMIN_PASS  Technitium admin credentials
+#   TECHNITIUM_SERVICE     Service that exposes the API (default: technitium-web)
 
 set -euo pipefail
 
 TECHNITIUM_CHART_PATH="${TECHNITIUM_CHART_PATH:-./helm-technitium-chart/technitium}"
 TECHNITIUM_NAMESPACE="${TECHNITIUM_NAMESPACE:-technitium}"
+# The chart names the API/console Service <fullname>-web and the DNS Service
+# <fullname>-dns. Port 5380 lives on the web Service.
+TECHNITIUM_SERVICE="${TECHNITIUM_SERVICE:-technitium-web}"
 EXTERNAL_DNS_NAMESPACE="${EXTERNAL_DNS_NAMESPACE:-external-dns}"
 ZONE="${ZONE:-example.test}"
 RECORD="${RECORD:-e2e.example.test}"
@@ -43,7 +47,7 @@ require kubectl; require helm; require curl; require jq
 # Port-forward 5380 -> localhost:5380 in the background, wait until reachable.
 port_forward_technitium() {
   cleanup_pf
-  kubectl -n "$TECHNITIUM_NAMESPACE" port-forward svc/technitium 5380:5380 \
+  kubectl -n "$TECHNITIUM_NAMESPACE" port-forward "svc/$TECHNITIUM_SERVICE" 5380:5380 \
     >/tmp/pf.log 2>&1 &
   PF_PID=$!
   for _ in $(seq 1 30); do

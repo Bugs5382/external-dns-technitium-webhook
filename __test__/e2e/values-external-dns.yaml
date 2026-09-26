@@ -52,7 +52,7 @@ provider:
       - name: LOG_LEVEL
         value: debug
       - name: TECHNITIUM_HOST
-        value: "http://technitium.technitium.svc.cluster.local"
+        value: "http://technitium-web.technitium.svc.cluster.local"
       - name: TECHNITIUM_PORT
         value: "5380"
       - name: TECHNITIUM_USER
