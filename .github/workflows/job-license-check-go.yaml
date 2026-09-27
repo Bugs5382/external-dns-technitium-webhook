@@ -1,0 +1,53 @@
+# Apache License 2.0
+#
+# Copyright 2026 external-dns-technitium-webhook Contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+name: License Check (Go)
+# Fail if a 3rd-party Go dependency carries a license outside the allowlist. No
+# SAST/vuln scanning here (Go Security covers that).
+#
+# This file ships only to repos with a root go.mod (compose.sh by manifest, the
+# governance overlay by manifest), so it never starts a runner just to find no
+# go.mod. The npm check lives in job-license-check-npm.yaml the same way; both
+# replace the old two-job job-license-check.yaml, whose off-ecosystem job billed
+# a minute per run to do nothing.
+#
+# Pull requests only, and not while the PR is a draft; the PR run covers what
+# merges, so nothing reruns on push to main.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  go:
+    name: ⚖️ Dependency licenses (Go)
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Check dependency licenses
+        run: |
+          go install github.com/google/go-licenses@latest
+          "$(go env GOPATH)/bin/go-licenses" check ./... \
+            --allowed_licenses=MIT,ISC,Apache-2.0,BSD-2-Clause,BSD-3-Clause,0BSD,CC0-1.0,Unlicense,MPL-2.0,CC-BY-4.0

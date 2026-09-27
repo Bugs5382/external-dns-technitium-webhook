@@ -14,22 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 name: GoLic
+# Pull requests only, and not while the PR is a draft. There is no push trigger:
+# the PR run already tested the tree being merged, so nothing reruns on push to
+# a branch or to main.
 on:
-  push:
-    paths-ignore:
-      - '**.md'
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened, ready_for_review]
 jobs:
   GoLic:
     name: GoLic
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - name: GoLic
         run: |
-          export PATH=${PATH}:`go env GOPATH`/bin
+          # Assign first, then export, so a failing `go env` is not masked.
+          gobin="$(go env GOPATH)/bin"
+          export PATH="${PATH}:${gobin}"
           go install github.com/Bugs5382/golic/cmd/golic@v0.2.0
           golic inject -t apache2 -c "2026 external-dns-technitium-webhook Contributors" -x -d

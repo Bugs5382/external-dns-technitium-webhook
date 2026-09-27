@@ -24,14 +24,18 @@ on:
     branches: [main]
     paths: ['.github/labels.yml']
 permissions:
+  contents: read
   issues: write
 jobs:
   labeler:
-    name: Sync labels
+    name: 🏷️ Sync labels
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: crazy-max/ghaction-github-labeler@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Reconcile labels with labels.yml
+        uses: crazy-max/ghaction-github-labeler@v5
         with:
           yaml-file: .github/labels.yml
           skip-delete: false
