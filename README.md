@@ -252,7 +252,7 @@ A live integration test stands up a [`kind`](https://kind.sigs.k8s.io/) cluster 
 
 | Path                                       | Purpose                                                       |
 |--------------------------------------------|---------------------------------------------------------------|
-| `.github/workflows/job-e2e.yaml`           | GitHub Actions workflow — runs on PRs and pushes to `main`.   |
+| `.github/workflows/job-e2e.yaml`           | GitHub Actions workflow — runs on ready PRs and on dispatch.  |
 | `__test__/e2e/run.sh`                      | Orchestration script (idempotent; safe to re-run).            |
 | `__test__/e2e/values-technitium.yaml`      | Helm values for the Technitium chart.                         |
 | `__test__/e2e/values-external-dns.yaml`    | Helm values for ExternalDNS + this webhook as a sidecar.      |

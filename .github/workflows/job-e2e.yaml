@@ -21,17 +21,17 @@ on:
         description: 'Bugs5382/helm-technitium-chart git ref (branch, tag, or SHA). Defaults to main = latest chart.'
         required: false
         default: main
+  # Pull requests only, and not while the PR is a draft. There is no push
+  # trigger: the PR run already tested the tree being merged. workflow_dispatch
+  # stays for re-running against a specific chart ref.
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
+    types: [opened, synchronize, reopened, ready_for_review]
 jobs:
   e2e:
     name: E2E (kind + Technitium + external-dns + webhook)
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
